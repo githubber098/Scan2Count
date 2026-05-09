@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Log in — Scan2Count{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl shadow p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-1">Welcome back</h1>
+    <p class="text-gray-500 text-sm mb-6">Log in to see today's meals.</p>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form action="/login" method="post" class="space-y-4">
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="email">
+                Email
+            </label>
+            <input
+                id="email" name="email" type="email" required autocomplete="email"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="you@example.com"
+            >
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="password">
+                Password
+            </label>
+            <input
+                id="password" name="password" type="password" required
+                autocomplete="current-password"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Your password"
+            >
+        </div>
+
+        <button
+            type="submit"
+            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold
+                   py-3 rounded-xl transition-colors text-sm mt-2"
+        >
+            Log in
+        </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-4">
+        Don't have an account?
+        <a href="/signup" class="text-green-600 font-medium hover:underline">Sign up</a>
+    </p>
+</div>
+{% endblock %}

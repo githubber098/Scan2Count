@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Today — Scan2Count{% endblock %}
+
+{% block content %}
+
+<!-- Greeting -->
+<div class="mb-4">
+    <h1 class="text-2xl font-bold text-gray-800">
+        Hey, {{ profile.name }} 👋
+    </h1>
+    <p class="text-gray-500 text-sm">Here's your day so far.</p>
+</div>
+
+<!-- Calorie summary card (placeholder — real data comes Week 4) -->
+<div class="bg-white rounded-2xl shadow p-5 mb-4">
+    <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-medium text-gray-600">Calories today</span>
+        <span class="text-xs text-gray-400">goal: {{ profile.daily_calorie_target }} kcal</span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-full bg-gray-100 rounded-full h-3 mb-2">
+        <div class="bg-green-400 h-3 rounded-full" style="width: 0%"></div>
+    </div>
+    <p class="text-xs text-gray-400">0 / {{ profile.daily_calorie_target }} kcal logged</p>
+</div>
+
+<!-- Macro bars -->
+<div class="bg-white rounded-2xl shadow p-5 mb-4">
+    <p class="text-sm font-medium text-gray-600 mb-3">Macros</p>
+    <div class="space-y-3">
+
+        <div>
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Protein</span>
+                <span>0 / {{ profile.daily_protein_g }}g</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-blue-400 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div>
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Carbs</span>
+                <span>0 / {{ profile.daily_carbs_g }}g</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-yellow-400 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div>
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Fat</span>
+                <span>0 / {{ profile.daily_fat_g }}g</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-orange-400 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Log meal button -->
+<a
+    href="/log"
+    class="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold
+           py-4 rounded-2xl text-center transition-colors text-base shadow"
+>
+    📸 Log a meal
+</a>
+
+<!-- Meal list placeholder -->
+<div class="mt-6">
+    <p class="text-sm font-medium text-gray-600 mb-3">Today's meals</p>
+    <div class="bg-white rounded-2xl shadow p-5 text-center">
+        <p class="text-gray-400 text-sm">No meals logged yet.</p>
+        <p class="text-gray-400 text-xs mt-1">Tap "Log a meal" to get started.</p>
+    </div>
+</div>
+
+{% endblock %}

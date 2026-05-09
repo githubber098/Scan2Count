@@ -14,7 +14,7 @@ pydantic_core==2.46.4
 python-dotenv==1.2.1
 python-multipart==0.0.20
 PyYAML==6.0.3
-starlette==0.38.6
+starlette==0.37.2
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.32.0

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Confirming your account…{% endblock %}
+{% block content %}
+<div class="bg-white rounded-2xl shadow p-6 text-center">
+    <div class="text-4xl mb-3">⏳</div>
+    <p class="text-gray-600 text-sm">Confirming your account…</p>
+</div>
+
+<script>
+    // The JWT is in the URL fragment — extract and POST to server
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const access_token = params.get("access_token");
+    const type = params.get("type");
+
+    if (access_token) {
+        fetch("/auth/session", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ access_token, type })
+        }).then(res => {
+            if (res.redirected) window.location.href = res.url;
+            else window.location.href = "/onboarding";
+        });
+    } else {
+        window.location.href = "/login?error=invalid_link";
+    }
+</script>
+{% endblock %}

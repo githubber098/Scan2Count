@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Scan2Count{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <h1 class="text-2xl font-bold text-gray-800">Your profile</h1>
+    <p class="text-gray-500 text-sm">{{ user.email }}</p>
+</div>
+
+<!-- Stats card -->
+<div class="bg-white rounded-2xl shadow p-5 mb-4">
+    <p class="text-sm font-medium text-gray-600 mb-3">About you</p>
+    <div class="grid grid-cols-2 gap-y-3 text-sm">
+        <span class="text-gray-500">Name</span>
+        <span class="text-gray-800 font-medium">{{ profile.name }}</span>
+
+        <span class="text-gray-500">Weight</span>
+        <span class="text-gray-800 font-medium">{{ profile.weight_kg }} kg</span>
+
+        <span class="text-gray-500">Height</span>
+        <span class="text-gray-800 font-medium">{{ profile.height_cm }} cm</span>
+
+        <span class="text-gray-500">Activity</span>
+        <span class="text-gray-800 font-medium capitalize">{{ profile.activity_level }}</span>
+
+        <span class="text-gray-500">Goal</span>
+        <span class="text-gray-800 font-medium capitalize">{{ profile.goal }} weight</span>
+    </div>
+</div>
+
+<!-- Daily targets card -->
+<div class="bg-white rounded-2xl shadow p-5 mb-4">
+    <p class="text-sm font-medium text-gray-600 mb-3">Daily targets</p>
+    <div class="space-y-2">
+
+        <div class="flex justify-between items-center py-2 border-b border-gray-50">
+            <span class="text-sm text-gray-500">Calories</span>
+            <span class="text-sm font-semibold text-gray-800">
+                {{ profile.daily_calorie_target }} kcal
+            </span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-gray-50">
+            <span class="text-sm text-gray-500">Protein</span>
+            <span class="text-sm font-semibold text-blue-600">{{ profile.daily_protein_g }}g</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-gray-50">
+            <span class="text-sm text-gray-500">Carbohydrates</span>
+            <span class="text-sm font-semibold text-yellow-600">{{ profile.daily_carbs_g }}g</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-gray-50">
+            <span class="text-sm text-gray-500">Fat</span>
+            <span class="text-sm font-semibold text-orange-600">{{ profile.daily_fat_g }}g</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2">
+            <span class="text-sm text-gray-500">Fiber</span>
+            <span class="text-sm font-semibold text-green-600">{{ profile.daily_fiber_g }}g</span>
+        </div>
+
+    </div>
+</div>
+
+<a
+    href="/home"
+    class="block w-full text-center text-sm text-green-600 font-medium py-2"
+>
+    ← Back to today
+</a>
+
+{% endblock %}

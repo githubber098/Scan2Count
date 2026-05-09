@@ -3,15 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}FoodScan{% endblock %}</title>
+    <title>{% block title %}Scan2Count{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
     <!-- Navbar -->
     <nav class="bg-white shadow-sm px-4 py-3 flex items-center justify-between">
-        <span class="text-green-600 font-bold text-lg">🥗 FoodScan</span>
-        <a href="#" class="text-sm text-gray-500">Log in</a>
+        <a href="/" class="text-green-600 font-bold text-lg">🥗 Scan2Count</a>
+        <div class="flex items-center gap-4">
+            {% if user %}
+                <a href="/profile" class="text-sm text-gray-500 hover:text-gray-800">Profile</a>
+                <form action="/logout" method="post" class="inline">
+                    <button type="submit" class="text-sm text-red-500 hover:text-red-700">
+                        Log out
+                    </button>
+                </form>
+            {% else %}
+                <a href="/login" class="text-sm text-gray-500 hover:text-gray-800">Log in</a>
+            {% endif %}
+        </div>
     </nav>
 
     <!-- Page content -->
