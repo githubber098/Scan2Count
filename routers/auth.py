@@ -1,10 +1,20 @@
-from fastapi import APIRouter, Request, Form, Body
+from __future__ import annotations
+
+import logging
+import os
+
+from fastapi import APIRouter, Request, Form
+
+logger = logging.getLogger(__name__)
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from supabase_auth.errors import AuthApiError
+from gotrue.errors import AuthApiError
 from jinja2 import Environment, FileSystemLoader
 
 from services.auth import sign_up, sign_in
+
+# Cookies must NOT be marked secure on plain HTTP (local dev).
+# Set ENVIRONMENT=production in Render env vars.
+SECURE_COOKIES = os.environ.get("ENVIRONMENT", "development") == "production"
 
 router = APIRouter()
 jinja_env = Environment(loader=FileSystemLoader("templates"))
@@ -59,10 +69,11 @@ async def signup_submit(
             {"request": request, "error": str(e.message)},
             status_code=400,
         )
-    except Exception:
+    except Exception as e:
+        logger.exception("signup error")
         return render(
             "auth/signup.html",
-            {"request": request, "error": "Something went wrong. Please try again."},
+            {"request": request, "error": f"Something went wrong: {e}"},
             status_code=500,
         )
 
@@ -79,7 +90,7 @@ async def signup_submit(
         key="access_token",
         value=result["session"].access_token,
         httponly=True,
-        secure=True,
+        secure=SECURE_COOKIES,
         samesite="lax",
         max_age=60 * 60 * 24 * 7,
     )
@@ -115,10 +126,11 @@ async def login_submit(
             {"request": request, "error": "Invalid email or password."},
             status_code=401,
         )
-    except Exception:
+    except Exception as e:
+        logger.exception("login error")
         return render(
             "auth/login.html",
-            {"request": request, "error": "Something went wrong. Please try again."},
+            {"request": request, "error": f"Something went wrong: {e}"},
             status_code=500,
         )
 
@@ -127,20 +139,20 @@ async def login_submit(
         key="access_token",
         value=result["session"].access_token,
         httponly=True,
-        secure=True,
+        secure=SECURE_COOKIES,
         samesite="lax",
         max_age=60 * 60 * 24 * 7,
     )
     return response
 
 @router.post("/auth/session")
-async def set_session(access_token: str = Body(..., embed=True), type: str = Body(..., embed=True)):
+async def set_session(access_token: str = Form(...), type: str = Form(...)):
     response = RedirectResponse(url="/onboarding" if type == "signup" else "/home", status_code=303)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=SECURE_COOKIES,
         samesite="lax",
         max_age=60 * 60 * 24 * 7,
     )

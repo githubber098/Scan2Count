@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 from supabase import create_client, Client
-from supabase_auth.errors import AuthApiError
+from gotrue.errors import AuthApiError
 
 
 def get_supabase() -> Client:

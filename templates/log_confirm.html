@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm meal — Scan2Count{% endblock %}
+
+{% block content %}
+
+<div class="mb-5">
+    <h1 class="text-2xl font-bold text-gray-800">Confirm meal</h1>
+    <p class="text-gray-500 text-sm">Adjust quantities if needed, then save.</p>
+</div>
+
+<form action="/log/save" method="post" id="confirm-form">
+    <!-- Populated by JS before submit -->
+    <input type="hidden" name="items_json" id="items-json">
+
+    <div class="space-y-3">
+        {% for item in items %}
+        <div
+            class="bg-white rounded-2xl shadow p-4 item-row"
+            data-food-code="{{ item.food_code or '' }}"
+            data-food-name="{{ item.food_name }}"
+            data-energy="{{ item.energy_kcal_per100g }}"
+            data-protein="{{ item.protein_g_per100g }}"
+            data-fat="{{ item.fat_g_per100g }}"
+            data-carbs="{{ item.carbs_g_per100g }}"
+            data-fiber="{{ item.fiber_g_per100g }}"
+        >
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex-1 min-w-0 pr-3">
+                    <p class="font-medium text-gray-800 truncate">{{ item.food_name }}</p>
+                    {% if not item.matched %}
+                        <p class="text-xs text-orange-500 mt-0.5">⚠ Not in database — macros shown as 0</p>
+                    {% elif item.ai_name != item.food_name %}
+                        <p class="text-xs text-gray-400 mt-0.5">Detected: "{{ item.ai_name }}"</p>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <input
+                        type="number"
+                        class="quantity-input w-16 border border-gray-300 rounded-lg px-2 py-1
+                               text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-400"
+                        value="{{ item.quantity_g | int }}"
+                        min="1" max="2000" step="1"
+                    >
+                    <span class="text-xs text-gray-400">g</span>
+                </div>
+            </div>
+
+            <!-- Macro pills -->
+            <div class="flex gap-4 text-xs text-gray-500">
+                <span><span class="macro-cal font-semibold text-gray-700">{{ item.calories | int }}</span> kcal</span>
+                <span>P <span class="macro-protein">{{ item.protein_g }}</span>g</span>
+                <span>F <span class="macro-fat">{{ item.fat_g }}</span>g</span>
+                <span>C <span class="macro-carbs">{{ item.carbs_g }}</span>g</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Totals -->
+    <div class="bg-green-50 border border-green-200 rounded-2xl p-4 mt-4">
+        <p class="text-sm font-semibold text-gray-700 mb-3">Total</p>
+        <div class="grid grid-cols-4 gap-2 text-center">
+            <div>
+                <p class="text-xl font-bold text-green-600" id="total-cal">0</p>
+                <p class="text-xs text-gray-400">kcal</p>
+            </div>
+            <div>
+                <p class="text-xl font-bold text-blue-500" id="total-protein">0</p>
+                <p class="text-xs text-gray-400">P (g)</p>
+            </div>
+            <div>
+                <p class="text-xl font-bold text-orange-400" id="total-fat">0</p>
+                <p class="text-xs text-gray-400">F (g)</p>
+            </div>
+            <div>
+                <p class="text-xl font-bold text-yellow-500" id="total-carbs">0</p>
+                <p class="text-xs text-gray-400">C (g)</p>
+            </div>
+        </div>
+    </div>
+
+    <button
+        type="submit"
+        class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold
+               py-4 rounded-2xl text-center transition-colors text-base shadow"
+    >
+        Log this meal ✓
+    </button>
+
+    <a href="/log" class="block text-center text-sm text-gray-400 mt-3 hover:text-gray-600">
+        ← Retake photo
+    </a>
+</form>
+
+<script>
+const rows = Array.from(document.querySelectorAll('.item-row'));
+
+function recalcRow(row) {
+    const qty    = parseFloat(row.querySelector('.quantity-input').value) || 0;
+    const factor = qty / 100;
+    row.querySelector('.macro-cal').textContent     = Math.round((parseFloat(row.dataset.energy)  || 0) * factor);
+    row.querySelector('.macro-protein').textContent = ((parseFloat(row.dataset.protein) || 0) * factor).toFixed(1);
+    row.querySelector('.macro-fat').textContent     = ((parseFloat(row.dataset.fat)     || 0) * factor).toFixed(1);
+    row.querySelector('.macro-carbs').textContent   = ((parseFloat(row.dataset.carbs)   || 0) * factor).toFixed(1);
+}
+
+function recalcTotals() {
+    let cal = 0, pro = 0, fat = 0, carb = 0;
+    rows.forEach(row => {
+        const f = (parseFloat(row.querySelector('.quantity-input').value) || 0) / 100;
+        cal  += (parseFloat(row.dataset.energy)  || 0) * f;
+        pro  += (parseFloat(row.dataset.protein) || 0) * f;
+        fat  += (parseFloat(row.dataset.fat)     || 0) * f;
+        carb += (parseFloat(row.dataset.carbs)   || 0) * f;
+    });
+    document.getElementById('total-cal').textContent     = Math.round(cal);
+    document.getElementById('total-protein').textContent = pro.toFixed(1);
+    document.getElementById('total-fat').textContent     = fat.toFixed(1);
+    document.getElementById('total-carbs').textContent   = carb.toFixed(1);
+}
+
+rows.forEach(row => {
+    row.querySelector('.quantity-input').addEventListener('input', () => {
+        recalcRow(row);
+        recalcTotals();
+    });
+    recalcRow(row);
+});
+recalcTotals();
+
+// Pack items into the hidden JSON field before submit
+document.getElementById('confirm-form').addEventListener('submit', () => {
+    const items = rows.map(row => ({
+        food_code:            row.dataset.foodCode || null,
+        food_name:            row.dataset.foodName,
+        quantity_g:           parseFloat(row.querySelector('.quantity-input').value) || 0,
+        energy_kcal_per100g:  parseFloat(row.dataset.energy)  || 0,
+        protein_g_per100g:    parseFloat(row.dataset.protein) || 0,
+        fat_g_per100g:        parseFloat(row.dataset.fat)     || 0,
+        carbs_g_per100g:      parseFloat(row.dataset.carbs)   || 0,
+        fiber_g_per100g:      parseFloat(row.dataset.fiber)   || 0,
+    }));
+    document.getElementById('items-json').value = JSON.stringify(items);
+});
+</script>
+
+{% endblock %}

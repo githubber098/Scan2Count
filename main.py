@@ -9,6 +9,7 @@ import psycopg2
 
 from routers import auth as auth_router
 from routers import profile as profile_router
+from routers import log as log_router
 from dependencies import get_optional_user
 
 load_dotenv()
@@ -25,6 +26,7 @@ def render(name: str, context: dict, status_code: int = 200):
 # Register routers
 app.include_router(auth_router.router)
 app.include_router(profile_router.router)
+app.include_router(log_router.router)
 
 
 @app.get("/", response_class=HTMLResponse)

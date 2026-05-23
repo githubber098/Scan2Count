@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 from services.auth import get_user_from_token
