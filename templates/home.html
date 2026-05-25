@@ -12,18 +12,23 @@
     <p class="text-gray-500 text-sm">Here's your day so far.</p>
 </div>
 
-<!-- Calorie summary card (placeholder — real data comes Week 4) -->
+<!-- Calories card -->
 <div class="bg-white rounded-2xl shadow p-5 mb-4">
     <div class="flex items-center justify-between mb-3">
         <span class="text-sm font-medium text-gray-600">Calories today</span>
-        <span class="text-xs text-gray-400">goal: {{ profile.daily_calorie_target }} kcal</span>
+        <span class="text-xs text-gray-400">goal: {{ cal_target | int }} kcal</span>
     </div>
-
-    <!-- Progress bar -->
     <div class="w-full bg-gray-100 rounded-full h-3 mb-2">
-        <div class="bg-green-400 h-3 rounded-full" style="width: 0%"></div>
+        <div class="bg-green-400 h-3 rounded-full transition-all duration-500"
+             style="width: {{ cal_pct }}%"></div>
     </div>
-    <p class="text-xs text-gray-400">0 / {{ profile.daily_calorie_target }} kcal logged</p>
+    <p class="text-xs text-gray-500">
+        <span class="font-semibold text-gray-700">{{ totals.calories | int }}</span>
+        / {{ cal_target | int }} kcal logged
+        {% if cal_pct >= 100 %}
+        <span class="text-orange-500 font-medium ml-1">· goal reached</span>
+        {% endif %}
+    </p>
 </div>
 
 <!-- Macro bars -->
@@ -34,30 +39,33 @@
         <div>
             <div class="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Protein</span>
-                <span>0 / {{ profile.daily_protein_g }}g</span>
+                <span>{{ totals.protein_g }}g / {{ prot_target | int }}g</span>
             </div>
             <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="bg-blue-400 h-2 rounded-full" style="width: 0%"></div>
+                <div class="bg-blue-400 h-2 rounded-full transition-all duration-500"
+                     style="width: {{ protein_pct }}%"></div>
             </div>
         </div>
 
         <div>
             <div class="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Carbs</span>
-                <span>0 / {{ profile.daily_carbs_g }}g</span>
+                <span>{{ totals.carbs_g }}g / {{ carb_target | int }}g</span>
             </div>
             <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="bg-yellow-400 h-2 rounded-full" style="width: 0%"></div>
+                <div class="bg-yellow-400 h-2 rounded-full transition-all duration-500"
+                     style="width: {{ carbs_pct }}%"></div>
             </div>
         </div>
 
         <div>
             <div class="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Fat</span>
-                <span>0 / {{ profile.daily_fat_g }}g</span>
+                <span>{{ totals.fat_g }}g / {{ fat_target | int }}g</span>
             </div>
             <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="bg-orange-400 h-2 rounded-full" style="width: 0%"></div>
+                <div class="bg-orange-400 h-2 rounded-full transition-all duration-500"
+                     style="width: {{ fat_pct }}%"></div>
             </div>
         </div>
 
@@ -68,18 +76,57 @@
 <a
     href="/log"
     class="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold
-           py-4 rounded-2xl text-center transition-colors text-base shadow"
+           py-4 rounded-2xl text-center transition-colors text-base shadow mb-6"
 >
     📸 Log a meal
 </a>
 
-<!-- Meal list placeholder -->
-<div class="mt-6">
+<!-- Today's meals -->
+<div>
     <p class="text-sm font-medium text-gray-600 mb-3">Today's meals</p>
-    <div class="bg-white rounded-2xl shadow p-5 text-center">
-        <p class="text-gray-400 text-sm">No meals logged yet.</p>
-        <p class="text-gray-400 text-xs mt-1">Tap "Log a meal" to get started.</p>
-    </div>
+
+    {% if meals %}
+        <div class="space-y-3">
+        {% for meal in meals %}
+        <div class="bg-white rounded-2xl shadow p-4">
+
+            <!-- Meal header -->
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-gray-400">{{ meal.time_str }}</span>
+                <span class="text-sm font-bold text-green-600">
+                    {{ meal.total_calories | int }} kcal
+                </span>
+            </div>
+
+            <!-- Items -->
+            {% if meal.meal_log_items %}
+            <div class="divide-y divide-gray-50">
+                {% for item in meal.meal_log_items %}
+                <div class="flex items-center justify-between py-1.5 text-sm">
+                    <span class="text-gray-700">{{ item.food_name }}</span>
+                    <span class="text-gray-400 text-xs">{{ item.calories | int }} kcal</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Meal macro summary -->
+            <div class="flex gap-4 text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                <span>P <span class="text-gray-600">{{ meal.total_protein_g }}g</span></span>
+                <span>C <span class="text-gray-600">{{ meal.total_carbs_g }}g</span></span>
+                <span>F <span class="text-gray-600">{{ meal.total_fat_g }}g</span></span>
+            </div>
+
+        </div>
+        {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="bg-white rounded-2xl shadow p-5 text-center">
+            <p class="text-gray-400 text-sm">No meals logged yet today.</p>
+            <p class="text-gray-400 text-xs mt-1">Tap "Log a meal" above to get started.</p>
+        </div>
+    {% endif %}
 </div>
 
 {% endblock %}

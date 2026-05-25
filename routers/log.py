@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from dependencies import get_current_user
 from services.foods import get_all_food_names, lookup_food, macros_for_quantity
+from services.groq_match import match_food_name
 from services.profile import get_supabase_admin
 from services.vision import analyze_meal_photo
 
@@ -126,21 +127,26 @@ async def manual_submit(
     if not raw_items:
         return render("log.html", {**ctx, "error": "No items entered."}, 400)
 
+    food_names = get_all_food_names()
+
     line_items = []
     for item in raw_items:
-        name     = str(item.get("name", "")).strip()
-        servings = float(item.get("servings") or 1)
-        if not name:
+        description = str(item.get("name", "")).strip()
+        servings    = float(item.get("servings") or 1)
+        if not description:
             continue
 
-        food = lookup_food(name)
-        if food:
-            base_qty  = float(food["quantity"] or 1)
-            user_qty  = servings * base_qty   # e.g. 2 servings × 1 piece = 2 pieces
-        else:
-            user_qty  = servings              # unmatched: store as-is
+        # Ask Groq to map free-text → canonical DB name; fall back to direct lookup
+        canonical = match_food_name(description, food_names) or description
+        food      = lookup_food(canonical)
 
-        line_items.append(_build_line_item(name, food, user_qty, "serving"))
+        if food:
+            base_qty = float(food["quantity"] or 1)
+            user_qty = servings * base_qty   # e.g. 2 servings × 1 piece = 2 pieces
+        else:
+            user_qty = servings              # unmatched: store as-is
+
+        line_items.append(_build_line_item(description, food, user_qty, "serving"))
 
     if not line_items:
         return render("log.html", {**ctx, "error": "None of those items were recognised. Check the spelling."}, 400)
