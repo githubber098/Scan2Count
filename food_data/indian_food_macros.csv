@@ -1,0 +1,500 @@
+item_name,quantity,unit,carbohydrates,protein,fat,fiber,calories
+Roti (Plain Wheat),1,piece,15.2,4.1,0.8,2.4,84
+Basmati Rice (Cooked),1,cup,45.0,4.3,0.3,0.6,206
+Naan (Plain),1,piece,38.5,7.5,2.5,1.5,195
+Paratha (Plain),1,piece,30.0,6.0,8.0,2.5,220
+Poori (Plain),1,piece,20.0,3.5,6.0,1.5,142
+Dal Makhani,1,cup,35.0,12.0,8.0,6.0,270
+Chana Masala,1,cup,32.0,13.0,6.0,8.0,260
+Chole Bhature Dough,1,piece,45.0,8.0,4.0,3.0,260
+Samosa (Potato),1,piece,25.0,3.5,8.0,2.0,170
+Pakora (Mixed Vegetables),100,g,20.0,4.5,6.0,2.0,150
+Idli (Rice),1,piece,12.0,2.5,0.5,1.0,60
+Dosa (Plain),1,piece,28.0,5.0,2.0,1.5,145
+Uttapam (Vegetable),1,piece,25.0,4.5,2.5,1.5,135
+Upma (Semolina),1,cup,35.0,5.0,6.0,1.5,195
+Poha (Flattened Rice),1,cup,30.0,3.0,4.0,2.5,165
+Khichdi (Rice & Lentil),1,cup,40.0,9.0,3.0,4.0,245
+Paneer Tikka,100,g,8.0,18.0,10.0,0.5,185
+Tandoori Chicken Breast,100,g,2.0,25.0,4.0,0.0,151
+Butter Chicken (with sauce),1,cup,8.0,22.0,12.0,0.5,245
+Tikka Masala,1,cup,10.0,20.0,14.0,1.0,260
+Biryani (Chicken),1,cup,48.0,18.0,8.0,1.0,380
+Pulao (Vegetable),1,cup,42.0,6.0,4.0,2.0,240
+Fried Rice (Vegetable),1,cup,38.0,6.0,6.0,1.5,230
+Aloo Gobi (Potato Cauliflower),1,cup,18.0,3.5,6.0,3.0,140
+Bhindi Masala (Okra),1,cup,12.0,2.0,6.0,3.0,110
+Palak Paneer (Spinach Cottage Cheese),1,cup,12.0,16.0,10.0,2.0,210
+Paneer Butter Masala,1,cup,8.0,16.0,14.0,1.0,240
+Aloo Paratha,1,piece,35.0,6.0,9.0,3.5,240
+Stuffed Kulcha,1,piece,40.0,8.0,5.0,2.5,245
+Nan Khatai (Cookie),1,piece,18.0,2.0,4.5,0.5,115
+Jalebi,100,g,75.0,1.5,1.0,0.0,299
+Gulab Jamun,1,piece,22.0,1.5,4.0,0.0,130
+Laddu (Besan),1,piece,18.0,2.5,5.0,1.0,130
+Kheer (Rice Pudding),1,cup,45.0,5.0,8.0,0.5,280
+Halwa (Carrot),1,cup,38.0,3.0,12.0,2.0,310
+Rasgulla,1,piece,18.0,2.0,0.5,0.0,90
+Barfi (Milk Fudge),1,piece,20.0,3.5,4.0,0.5,130
+Mysore Pak,1,piece,25.0,2.0,6.0,0.0,175
+Rasam,1,cup,8.0,1.5,1.0,1.5,45
+Sambar,1,cup,12.0,3.0,2.0,3.0,85
+Puri Masala,1,piece,20.0,3.5,6.0,1.5,142
+Aloo Tikki (Potato Patty),1,piece,22.0,3.0,4.0,2.0,130
+Chaat Papri,1,cup,30.0,4.0,4.0,2.0,170
+Bhel Puri,1,cup,45.0,5.0,2.0,3.0,220
+Sev (Savory Noodles),1,cup,45.0,8.0,10.0,2.0,310
+Murukku (Spiral Savory),30,g,18.0,2.5,4.0,0.5,120
+Chakli (Spiral Snack),30,g,20.0,2.0,4.0,0.5,130
+Chikhalwali,100,g,35.0,4.0,8.0,1.5,240
+Chikali (Roti with Jaggery),1,piece,32.0,4.0,6.0,2.0,200
+Chakula,1,piece,25.0,2.5,5.0,1.0,160
+Dhaniya Puri,1,piece,20.0,3.0,6.0,1.0,135
+Andhra Biryani,1,cup,50.0,16.0,10.0,1.5,410
+Hyderabadi Haleem,1,cup,28.0,18.0,8.0,3.0,270
+Nihari,1,cup,12.0,22.0,10.0,1.0,260
+Shami Kebab,1,piece,8.0,12.0,5.0,1.0,130
+Kofta,1,piece,12.0,10.0,6.0,1.0,140
+Seekh Kebab,1,piece,3.0,18.0,6.0,0.0,150
+Tandoori Roti,1,piece,15.0,4.5,0.5,2.0,80
+Lachha Paratha,1,piece,28.0,5.5,10.0,2.0,240
+Amritsari Kulcha,1,piece,38.0,6.0,6.0,2.0,250
+Chur Chur Naan,1,piece,35.0,7.0,3.0,1.5,200
+Peshwari Naan,1,piece,45.0,8.0,8.0,2.0,310
+Rogan Josh (Mutton),1,cup,8.0,24.0,12.0,1.0,270
+Korma (Chicken),1,cup,12.0,22.0,14.0,0.5,280
+Dopiaza (Chicken),1,cup,10.0,20.0,8.0,2.0,220
+Xacuti (Goan Curry),1,cup,8.0,18.0,12.0,1.5,250
+Sorpotel (Goan Pork),1,cup,5.0,20.0,10.0,0.5,230
+Ambot Tik (Fish Curry),1,cup,8.0,18.0,6.0,1.0,190
+Chole Kulche,1,piece,45.0,10.0,4.0,5.0,270
+Pav Bhaji,1,serving,35.0,6.0,8.0,3.0,250
+Misal Pav,1,serving,42.0,9.0,6.0,5.0,290
+Vada Pav,1,piece,35.0,5.0,8.0,2.0,240
+Batata Vada,1,piece,28.0,3.5,6.0,2.0,190
+Kachori,1,piece,32.0,4.5,8.0,2.0,230
+Jalebi with Rabri,1,serving,95.0,4.0,4.0,0.5,430
+Khir,1,cup,42.0,5.0,8.0,0.5,275
+Payasam (Coconut),1,cup,48.0,3.5,10.0,1.0,340
+Payasam (Jaggery),1,cup,52.0,2.5,8.0,1.0,340
+Modak (Sweet Rice),1,piece,28.0,2.5,4.0,1.0,160
+Til Gul,1,piece,15.0,2.0,3.0,0.5,100
+Puran Poli,1,piece,45.0,5.0,4.0,3.0,240
+Chakli,30,g,20.0,2.0,4.0,0.5,130
+Khichiyu,1,cup,38.0,6.0,3.0,2.5,210
+Fafda Jalebi,1,serving,65.0,8.0,5.0,3.0,350
+Chole Kulfi,1,stick,38.0,4.0,6.0,0.5,245
+Pani Puri,1,serving,35.0,3.0,2.0,2.0,150
+Gol Gappa,1,piece,8.0,1.0,0.5,0.5,35
+Momos (Vegetable),1,piece,12.0,3.5,1.5,0.5,70
+Momos (Meat),1,piece,10.0,5.0,2.0,0.5,85
+Thukpa (Noodle Soup),1,cup,32.0,8.0,4.0,2.0,210
+Aloo Paratha,1,piece,35.0,6.0,9.0,3.0,240
+Stuffed Kulcha,1,piece,40.0,8.0,5.0,2.5,245
+Gobhi Paratha,1,piece,32.0,6.0,8.0,3.0,225
+Muli Paratha,1,piece,30.0,5.5,8.5,2.5,220
+Ajwain Paratha,1,piece,28.0,5.0,8.0,2.0,210
+Methi Paratha,1,piece,29.0,5.5,7.5,2.5,215
+Paneer Paratha,1,piece,35.0,10.0,8.0,2.0,260
+Mooli Paratha,1,piece,31.0,5.5,8.0,2.5,220
+Spinach Paratha,1,piece,28.0,6.0,7.0,2.5,210
+Corn Paratha,1,piece,32.0,6.5,7.0,2.0,220
+Butter Naan,1,piece,38.5,7.5,4.5,1.5,220
+Garlic Naan,1,piece,38.0,7.0,3.5,1.5,205
+Coriander Naan,1,piece,36.0,7.0,3.0,1.5,195
+Paneer Naan,1,piece,45.0,10.0,5.0,2.0,280
+Onion Naan,1,piece,40.0,7.5,3.5,1.5,215
+Sesame Naan,1,piece,39.0,8.0,4.0,1.5,235
+Chur Chur Naan,1,piece,35.0,7.0,3.0,1.5,200
+Rumali Roti,1,piece,12.0,3.0,0.5,1.5,60
+Bajra Roti,1,piece,14.0,3.5,1.0,2.0,85
+Jowar Roti,1,piece,13.5,3.0,1.0,2.0,80
+Corn Roti,1,piece,14.0,3.5,0.8,2.0,82
+Methi Roti,1,piece,14.5,4.0,1.0,2.5,88
+Pudina Roti,1,piece,14.0,3.8,0.9,2.2,85
+Besan Roti,1,piece,18.0,6.0,1.2,2.5,105
+Multigrain Roti,1,piece,16.0,4.5,0.8,2.8,90
+Rice Roti,1,piece,13.0,3.5,0.8,1.8,78
+Rajgira Roti,1,piece,15.0,3.0,0.8,1.5,78
+Appam,1,piece,15.0,2.0,1.0,1.0,78
+Puttu,1,cup,32.0,3.5,2.0,2.5,160
+Adai,1,piece,20.0,5.0,1.5,2.0,110
+Pesarattu,1,piece,18.0,5.5,1.0,2.0,110
+Dosa (Masala),1,piece,32.0,6.0,3.5,2.0,175
+Rava Dosa,1,piece,30.0,5.5,3.0,1.5,165
+Ghee Roast,1,piece,25.0,5.0,4.0,1.5,160
+Schezwan Dosa,1,piece,35.0,6.0,4.0,2.0,195
+Paneer Dosa,1,piece,35.0,9.0,5.0,2.0,230
+Cheese Dosa,1,piece,33.0,7.0,6.0,1.5,235
+Uttapam (Onion),1,piece,26.0,5.0,3.0,2.0,155
+Uttapam (Tomato),1,piece,25.0,4.5,2.5,1.5,140
+Uttapam (Cheese),1,piece,28.0,7.0,4.0,1.5,185
+Idli (Sambar Rice),1,piece,13.0,2.8,0.6,1.2,65
+Idli (With Ghee),1,piece,13.0,2.5,2.0,1.0,85
+Moong Dal Idli,1,piece,11.0,3.5,0.5,1.0,65
+Rava Idli,1,piece,14.0,3.0,0.8,1.0,78
+Oats Idli,1,piece,15.0,4.0,1.0,1.5,85
+Vegetable Upma,1,cup,35.0,5.0,6.0,1.5,195
+Rava Upma,1,cup,38.0,5.5,6.0,1.0,200
+Oats Upma,1,cup,32.0,6.5,5.0,2.0,190
+Masala Upma,1,cup,36.0,5.0,7.0,1.5,210
+Cornflake Upma,1,cup,40.0,4.5,5.0,1.0,210
+Poha (Light),1,cup,28.0,2.5,3.0,2.0,150
+Poha with Jaggery,1,cup,35.0,2.5,4.0,2.0,180
+Poha Chivda,1,cup,42.0,4.0,6.0,2.5,260
+Corn Flakes with Milk,1,cup,35.0,7.0,4.0,2.0,225
+Muesli with Yogurt,1,cup,45.0,10.0,4.0,4.0,270
+Granola with Milk,1,cup,50.0,8.0,6.0,3.0,310
+Oatmeal with Honey,1,cup,42.0,6.0,4.0,3.5,240
+Dhokla,1,piece,18.0,3.5,0.8,1.0,95
+Khaman,1,piece,20.0,4.0,0.5,1.2,100
+Fafda,1,cup,45.0,8.0,5.0,3.0,280
+Khandvi,1,piece,12.0,2.5,1.0,0.8,68
+Chikhalwali,1,piece,35.0,4.0,8.0,1.5,240
+Bhakri,1,piece,18.0,2.5,1.5,2.0,95
+Makki Ki Roti,1,piece,14.0,3.0,1.2,2.0,82
+Handvo,1,piece,22.0,5.0,3.0,2.5,160
+Pakora (Onion),100,g,22.0,4.0,6.5,1.5,160
+Pakora (Paneer),100,g,18.0,7.0,7.0,1.0,170
+Pakora (Potato),100,g,20.0,3.5,6.0,1.5,150
+Pakora (Cauliflower),100,g,18.0,3.0,5.5,1.5,140
+Bhajiaa,100,g,20.0,3.0,6.0,2.0,150
+Fritter (Vegetable),100,g,22.0,3.5,5.5,1.5,160
+Paneer Pakora,100,g,16.0,8.0,7.5,0.5,175
+Mushroom Pakora,100,g,20.0,4.0,5.5,1.0,145
+Samosa (Meat),1,piece,28.0,5.0,9.0,1.5,195
+Samosa (Paneer),1,piece,26.0,5.5,8.5,1.5,190
+Samosa (Rajma),1,piece,25.0,4.5,8.0,3.0,190
+Samosa (Egg),1,piece,27.0,6.5,9.0,1.0,200
+Samosa (Vegetables),1,piece,25.0,3.5,8.0,2.5,180
+Kachori (Dal),1,piece,32.0,5.0,8.0,2.5,230
+Kachori (Urad),1,piece,35.0,4.5,7.5,1.5,240
+Kachori (Potato),1,piece,30.0,4.0,8.5,2.0,225
+Gujhiya,1,piece,35.0,4.0,8.0,1.5,240
+Malpua,1,piece,25.0,2.0,3.5,0.5,145
+Jalebi (Small),50,g,37.0,0.8,0.5,0.0,150
+Jalebi (Medium),100,g,75.0,1.5,1.0,0.0,299
+Imarti,1,piece,28.0,1.5,3.0,0.5,150
+Balushahi,1,piece,32.0,2.0,8.0,0.5,230
+Rabri Foni,1,cup,48.0,5.0,8.0,0.5,320
+Shira,1,cup,45.0,3.0,10.0,1.0,330
+Bedmi Puri,1,piece,22.0,5.0,6.0,2.5,165
+Aloo Puri,1,piece,20.0,3.5,6.0,1.5,142
+Amritsari Kulcha,1,piece,38.0,6.0,6.0,2.0,250
+Paneer Kulcha,1,piece,40.0,9.0,6.0,1.5,270
+Chikhalwali,1,piece,35.0,4.0,8.0,1.5,240
+Bhatura,1,piece,45.0,8.0,4.0,3.0,260
+Chole Bhature,1,serving,75.0,16.0,8.0,8.0,470
+Pav (Bread Roll),1,piece,25.0,4.5,2.0,1.5,135
+Bhaji (Potato Onion),1,cup,18.0,3.0,6.0,2.5,150
+Puri Sabzi,1,serving,28.0,4.0,6.5,2.0,195
+Aloo Parathe Ki Sabzi,1,cup,20.0,3.5,5.0,2.5,155
+Vada,1,piece,18.0,4.0,5.0,1.5,130
+Medhu Vada,1,piece,16.0,4.5,4.0,1.0,120
+Masala Vada,1,piece,20.0,4.5,5.5,1.2,155
+Punugulu,1,cup,28.0,3.5,3.0,1.5,160
+Jowar Bhakri,1,piece,16.0,2.5,1.5,2.5,95
+Makki Bhakri,1,piece,14.0,2.0,1.2,2.0,82
+Ragi Bhakri,1,piece,15.0,2.8,1.0,2.5,90
+Baghali Polow,1,cup,42.0,7.0,5.0,3.0,250
+Polo,1,cup,45.0,5.5,4.0,1.5,235
+Tahdig,1,serving,48.0,4.0,6.0,0.8,280
+Biryani (Vegetable),1,cup,46.0,5.0,6.0,2.0,280
+Biryani (Fish),1,cup,46.0,16.0,8.0,1.0,370
+Biryani (Lamb),1,cup,48.0,20.0,10.0,1.0,410
+Tahine,1,cup,40.0,4.0,8.0,1.5,255
+Samak Rice Khichdi,1,cup,35.0,4.0,3.0,1.5,190
+Vegetable Pulao,1,cup,42.0,6.0,4.0,2.0,240
+Peas Pulao,1,cup,44.0,6.5,4.0,2.5,250
+Mint Pulao,1,cup,41.0,5.5,4.5,1.5,245
+Fried Rice (Egg),1,cup,40.0,8.0,7.0,1.5,270
+Fried Rice (Chicken),1,cup,38.0,12.0,6.0,1.0,280
+Fried Rice (Shrimp),1,cup,38.0,10.0,6.5,1.0,270
+Hakka Noodles,1,cup,45.0,7.0,5.0,2.0,270
+Chow Mein (Vegetable),1,cup,48.0,6.0,4.5,2.0,270
+Chow Mein (Chicken),1,cup,46.0,10.0,5.5,1.5,290
+Manchow Soup,1,cup,12.0,2.5,1.5,1.0,75
+Corn Soup,1,cup,15.0,3.0,2.0,1.0,95
+Tomato Soup,1,cup,10.0,1.5,1.0,1.5,60
+Multicore Soup,1,cup,14.0,2.0,1.5,1.5,80
+Spinach Soup,1,cup,8.0,2.5,1.0,1.0,55
+Broccoli Soup,1,cup,12.0,3.0,2.0,2.0,85
+Carrot Soup,1,cup,11.0,1.5,1.5,1.5,65
+Pumpkin Soup,1,cup,9.0,1.0,1.0,1.0,50
+Lentil Soup,1,cup,20.0,6.0,2.0,3.0,140
+Mung Bean Soup,1,cup,18.0,5.5,1.5,2.5,130
+Vegetable Soup,1,cup,12.0,2.5,1.5,2.0,75
+Clear Soup,1,cup,4.0,1.0,0.5,0.5,25
+Ginger Garlic Soup,1,cup,8.0,1.5,1.0,0.5,50
+Mushroom Soup,1,cup,10.0,2.5,2.0,1.5,75
+Cauliflower Soup,1,cup,11.0,2.0,1.5,1.5,70
+Aloo Gobi,1,cup,18.0,3.5,6.0,3.0,140
+Bhindi Masala,1,cup,12.0,2.0,6.0,3.0,110
+Baingan Bharta,1,cup,15.0,2.5,5.0,2.5,120
+Lauki Sabzi,1,cup,10.0,1.5,3.0,1.5,70
+Tinda Sabzi,1,cup,12.0,1.5,4.0,2.0,90
+Arbi Sabzi,1,cup,20.0,2.0,4.0,2.5,130
+Sem (Beans) Sabzi,1,cup,14.0,2.5,3.5,2.5,100
+Karela Sabzi,1,cup,8.0,1.5,2.0,2.0,60
+Mushroom Sabzi,1,cup,8.0,2.5,3.0,1.5,75
+Paneer Chikhalwali,1,cup,10.0,16.0,10.0,1.0,210
+Palak Cottage Cheese,1,cup,12.0,16.0,10.0,2.0,210
+Matar Paneer,1,cup,14.0,15.0,10.0,2.5,220
+Paneer Do Pyaza,1,cup,10.0,16.0,11.0,1.5,230
+Paneer Tikka Masala,1,cup,12.0,18.0,12.0,1.0,240
+Paneer Tahine,1,cup,8.0,14.0,12.0,0.5,220
+Paneer Sukke,1,cup,6.0,14.0,10.0,1.0,200
+Mixed Vegetable Sabzi,1,cup,16.0,3.5,4.0,2.5,120
+Brocoli Sabzi,1,cup,10.0,3.0,3.0,2.0,80
+Bell Pepper Sabzi,1,cup,8.0,1.5,3.0,1.5,70
+Carrot Sabzi,1,cup,12.0,1.5,3.0,2.5,85
+Cucumber Sabzi,1,cup,6.0,0.8,1.5,1.0,40
+Radish Sabzi,1,cup,8.0,1.0,2.0,1.5,55
+Bottle Gourd Sabzi,1,cup,8.0,1.0,2.5,1.5,60
+Chikhalwali Chikhalwali,1,cup,14.0,2.5,4.0,2.0,100
+Tomato Sabzi,1,cup,8.0,1.0,2.0,1.5,55
+Onion Sabzi,1,cup,10.0,1.0,3.0,1.5,70
+Garlic Sabzi,1,cup,8.0,0.5,3.5,1.0,70
+Green Chilli Sabzi,1,cup,5.0,0.8,2.0,1.0,50
+Moong Dal,1,cup,42.0,12.0,1.0,3.5,230
+Masoor Dal,1,cup,40.0,9.0,0.5,3.0,210
+Chana Dal,1,cup,38.0,10.0,1.0,4.0,225
+Urad Dal,1,cup,44.0,10.0,1.5,3.5,235
+Toor Dal,1,cup,40.0,8.5,1.0,3.0,210
+Rajma,1,cup,32.0,6.0,0.5,4.0,165
+Black Eyed Peas,1,cup,30.0,5.5,0.5,3.5,160
+Chickpeas,1,cup,35.0,7.5,1.0,5.0,190
+Kidney Beans,1,cup,28.0,5.5,0.5,4.0,150
+Lentils (Mixed),1,cup,40.0,9.0,0.5,3.5,215
+Dal Makhani (Spicy),1,cup,35.0,12.0,8.5,6.0,280
+Dal Tadka,1,cup,35.0,9.0,5.0,4.5,245
+Dal Puri,1,piece,25.0,5.0,6.0,2.0,170
+Baked Dal,1,cup,38.0,8.5,2.0,3.5,225
+Sprouted Moong,1,cup,12.0,4.0,0.5,2.0,80
+Sprouted Rajma,1,cup,18.0,5.0,0.5,3.0,110
+Paneer (Cottage Cheese),100,g,9.0,25.0,20.0,0.0,295
+Paneer (Low Fat),100,g,9.0,23.0,11.0,0.0,205
+Paneer Tikka,100,g,8.0,18.0,10.0,0.5,185
+Tandoori Paneer,100,g,6.0,20.0,9.0,0.5,185
+Paneer Shashlik,100,g,10.0,16.0,10.0,1.0,210
+Chicken Breast (Roasted),100,g,0.0,26.0,3.5,0.0,145
+Chicken Thighs (Roasted),100,g,0.0,22.0,12.0,0.0,210
+Chicken Legs (Roasted),100,g,0.0,23.0,8.0,0.0,180
+Ground Chicken,100,g,0.0,24.0,5.0,0.0,150
+Chicken Tikka,100,g,3.0,24.0,6.0,0.0,165
+Tandoori Chicken,100,g,2.0,25.0,4.0,0.0,151
+Chicken Shami Kebab,100,g,6.0,18.0,5.0,0.5,155
+Egg (Whole),1,large,0.6,6.0,5.0,0.0,80
+Egg White,1,large,0.6,3.6,0.0,0.0,20
+Egg Yolk,1,large,0.3,2.7,5.0,0.0,60
+Scrambled Eggs,2,eggs,1.0,12.0,9.0,0.0,160
+Boiled Eggs,2,eggs,1.2,12.0,10.0,0.0,170
+Egg Curry,1,cup,8.0,10.0,12.0,1.0,210
+Shahi Egg Curry,1,cup,10.0,9.0,14.0,0.5,230
+Shakshuka,1,cup,12.0,8.0,8.0,1.5,160
+Fish Curry,1,cup,6.0,20.0,8.0,1.0,200
+Tandoori Fish,100,g,2.0,22.0,5.0,0.0,155
+Fish Tikka,100,g,3.0,20.0,6.0,0.5,165
+Amritsari Fish,1,piece,18.0,16.0,10.0,0.5,245
+Prawn Curry,1,cup,8.0,18.0,8.0,1.0,190
+Tandoori Prawns,100,g,2.0,20.0,4.0,0.0,145
+Shrimp Tikka,100,g,3.0,18.0,5.0,0.5,155
+Squid Curry,1,cup,8.0,16.0,6.0,1.0,170
+Crab Curry,1,cup,8.0,18.0,8.0,1.0,190
+Lobster Curry,1,cup,6.0,20.0,10.0,0.5,210
+Mutton Curry,1,cup,8.0,24.0,12.0,1.0,270
+Rogan Josh Mutton,1,cup,8.0,24.0,12.0,1.0,270
+Nihari Mutton,1,cup,12.0,22.0,10.0,1.0,260
+Korma Mutton,1,cup,12.0,22.0,14.0,0.5,280
+Gulab Jamun,1,piece,22.0,1.5,4.0,0.0,130
+Kheer,1,cup,45.0,5.0,8.0,0.5,280
+Payasam,1,cup,48.0,3.5,10.0,1.0,340
+Halwa,1,cup,38.0,3.0,12.0,2.0,310
+Flan,1,cup,28.0,4.0,6.0,0.0,180
+Phirni,1,cup,35.0,3.0,4.0,1.0,210
+Rasgulla,1,piece,18.0,2.0,0.5,0.0,90
+Sandesh,1,piece,16.0,3.5,1.0,0.0,85
+Barfi,1,piece,20.0,3.5,4.0,0.5,130
+Laddu,1,piece,18.0,2.5,5.0,1.0,130
+Burfi,1,piece,22.0,3.0,4.5,0.5,135
+Mysore Pak,1,piece,25.0,2.0,6.0,0.0,175
+Peda,1,piece,18.0,2.0,3.0,0.0,110
+Chikhalwali,1,piece,20.0,2.5,4.0,0.5,130
+Coconut Laddu,1,piece,22.0,2.0,5.0,1.0,140
+Til Laddu,1,piece,15.0,2.0,3.0,0.5,100
+Moong Dal Laddu,1,piece,16.0,2.5,3.0,1.0,110
+Chikhalwali Laddu,1,piece,18.0,2.0,4.5,0.5,125
+Mahalabia,1,cup,32.0,6.0,8.0,0.0,240
+Baklava,1,piece,25.0,1.5,5.0,0.5,150
+Pistachio Barfi,1,piece,24.0,3.0,5.0,0.5,160
+Mango Lassi,1,cup,32.0,4.0,2.0,0.5,180
+Strawberry Lassi,1,cup,28.0,3.5,2.0,0.5,160
+Pomegranate Lassi,1,cup,30.0,3.5,2.0,1.5,170
+Sweet Lassi,1,cup,22.0,3.0,2.0,0.0,140
+Buttermilk,1,cup,12.0,4.0,1.0,0.0,85
+Chaach,1,cup,10.0,3.5,1.0,0.0,70
+Nimbu Paani,1,cup,8.0,0.5,0.0,0.5,35
+Nimbu Sharbat,1,cup,18.0,0.0,0.0,0.0,70
+Jamun Sharbat,1,cup,25.0,0.0,0.0,0.0,100
+Khus Sharbat,1,cup,16.0,0.0,0.0,0.0,65
+Rose Sharbat,1,cup,18.0,0.0,0.0,0.0,72
+Thandai,1,cup,28.0,4.0,4.0,1.0,185
+Badam Milk,1,cup,20.0,5.0,4.0,0.5,160
+Saffron Milk,1,cup,18.0,4.0,3.5,0.0,145
+Haldi Doodh,1,cup,15.0,4.0,3.5,0.0,140
+Cinnamon Tea,1,cup,8.0,1.0,0.5,0.0,45
+Ginger Tea,1,cup,6.0,0.8,0.3,0.0,32
+Lemon Tea,1,cup,4.0,0.5,0.2,0.0,22
+Chai (Indian Tea),1,cup,8.0,1.0,1.0,0.0,55
+Masala Chai,1,cup,10.0,1.2,1.5,0.0,65
+Green Tea,1,cup,2.0,0.3,0.0,0.0,5
+Coffee with Milk,1,cup,6.0,2.0,2.0,0.0,60
+Black Coffee,1,cup,2.0,0.2,0.0,0.0,5
+Mango Juice,1,cup,28.0,1.0,0.2,0.5,115
+Orange Juice,1,cup,26.0,1.5,0.5,0.5,110
+Pomegranate Juice,1,cup,32.0,1.0,0.3,0.0,125
+Sugarcane Juice,1,cup,28.0,0.0,0.0,0.0,110
+Coconut Water,1,cup,12.0,0.9,0.2,0.0,60
+Watermelon Juice,1,cup,12.0,0.6,0.0,0.3,50
+Papaya Juice,1,cup,15.0,0.7,0.1,0.0,60
+Carrot Juice,1,cup,11.0,0.8,0.2,0.5,50
+Beet Juice,1,cup,13.0,1.0,0.0,0.5,55
+Guava Juice,1,cup,16.0,1.2,0.3,0.8,70
+Apple Yogurt,1,cup,25.0,8.0,2.0,0.5,165
+Fruit Yogurt,1,cup,22.0,7.0,2.0,0.5,155
+Hung Yogurt,1,cup,18.0,12.0,4.0,0.0,165
+Greek Yogurt,1,cup,12.0,15.0,5.0,0.0,150
+Plain Yogurt,1,cup,12.0,8.0,4.0,0.0,120
+Flavored Yogurt,1,cup,20.0,6.0,2.0,0.0,140
+Probiotic Yogurt,1,cup,14.0,8.0,3.0,0.0,130
+Milk (Whole),1,cup,12.0,8.0,8.0,0.0,150
+Milk (Low Fat),1,cup,12.0,8.0,3.0,0.0,110
+Milk (Skimmed),1,cup,12.0,8.0,0.0,0.0,80
+Condensed Milk,1,tbsp,8.0,1.5,2.0,0.0,60
+Evaporated Milk,1,cup,12.0,7.0,5.0,0.0,130
+Buttermilk (Store),1,cup,12.0,4.0,1.0,0.0,85
+Cream,1,tbsp,0.5,0.3,5.5,0.0,55
+Heavy Cream,1,tbsp,0.5,0.2,6.0,0.0,60
+Ghee,1,tbsp,0.0,0.0,15.0,0.0,135
+Vegetable Oil,1,tbsp,0.0,0.0,15.0,0.0,135
+Mustard Oil,1,tbsp,0.0,0.0,15.0,0.0,135
+Coconut Oil,1,tbsp,0.0,0.0,14.0,0.0,130
+Sesame Oil,1,tbsp,0.0,0.0,15.0,0.0,135
+Olive Oil,1,tbsp,0.0,0.0,14.0,0.0,125
+Butter,1,tbsp,0.0,0.0,11.0,0.0,100
+Coconut Milk,1,cup,8.0,2.0,24.0,0.0,240
+Almond Milk,1,cup,2.0,1.0,2.5,0.3,30
+Soy Milk,1,cup,4.0,3.5,2.0,0.5,45
+Cucumber,1,medium,3.5,0.8,0.1,0.5,17
+Tomato,1,medium,4.5,0.9,0.2,1.5,22
+Onion,1,medium,9.0,1.5,0.1,1.5,45
+Garlic,100,g,33.0,6.3,0.5,2.1,150
+Ginger,100,g,18.0,1.8,0.8,2.4,80
+Spinach,1,cup,1.0,0.9,0.1,0.7,7
+Cabbage,1,cup,5.0,1.5,0.1,1.0,22
+Broccoli,1,cup,7.0,2.8,0.4,1.5,34
+Cauliflower,1,cup,5.0,2.0,0.3,2.2,25
+Carrot,1,medium,6.0,0.6,0.2,1.7,25
+Radish,1,cup,4.0,0.7,0.1,1.0,18
+Turnip,1,cup,8.0,0.9,0.1,1.8,36
+Pumpkin,1,cup,8.0,1.0,0.1,1.1,30
+Bottle Gourd,1,cup,3.5,0.6,0.0,1.0,14
+Bitter Melon,1,cup,3.5,0.6,0.2,1.5,17
+Bell Pepper,1,medium,6.0,0.9,0.3,1.5,30
+Green Chilli,1,medium,2.0,0.1,0.0,0.4,10
+Ridge Gourd,1,cup,3.5,0.6,0.1,1.0,15
+Cluster Beans,1,cup,5.0,2.0,0.3,2.5,27
+Green Beans,1,cup,7.0,2.0,0.2,1.6,31
+Okra,1,cup,7.0,2.0,0.1,2.0,32
+Corn,1,cup,17.0,2.6,1.2,2.5,75
+Peas,1,cup,21.0,7.5,0.4,4.0,118
+Green Peas,1,cup,18.0,6.0,0.3,4.0,100
+Mushroom,1,cup,3.0,2.2,0.3,0.7,15
+Button Mushroom,1,cup,2.5,1.5,0.2,0.5,12
+Oyster Mushroom,1,cup,3.5,2.0,0.3,0.7,17
+Banana,1,medium,27.0,1.1,0.3,3.1,105
+Apple,1,medium,25.0,0.5,0.3,4.4,95
+Orange,1,medium,15.0,0.9,0.3,3.0,62
+Mango,1,medium,25.0,0.8,0.3,1.6,100
+Papaya,1,cup,15.0,0.7,0.1,2.8,60
+Guava,1,medium,12.0,1.4,0.6,5.4,68
+Coconut,100,g,15.0,3.3,33.0,9.0,354
+Pineapple,1,cup,13.0,0.5,0.1,1.5,55
+Pomegranate,1,medium,32.0,1.7,0.3,7.4,145
+Watermelon,1,cup,12.0,0.6,0.3,0.6,46
+Muskmelon,1,cup,12.0,1.5,0.4,1.4,55
+Strawberry,1,cup,11.0,1.0,0.3,3.0,49
+Blueberry,1,cup,21.0,1.1,0.3,3.6,84
+Grapes,1,cup,29.0,1.1,0.2,1.4,104
+Kiwi,1,medium,6.0,0.8,0.5,1.3,42
+Lemon,1,medium,9.0,0.6,0.3,2.8,29
+Lime,1,medium,7.0,0.5,0.2,1.9,20
+Dates,100,g,75.0,2.5,0.4,8.0,282
+Raisins,100,g,79.0,3.1,0.3,4.5,299
+Figs,100,g,64.0,1.5,0.3,6.5,249
+Almonds,100,g,22.0,21.0,50.0,12.5,579
+Cashews,100,g,30.0,18.0,44.0,3.3,553
+Walnuts,100,g,14.0,9.0,65.0,6.7,654
+Peanuts,100,g,16.0,26.0,49.0,8.5,567
+Pistachios,100,g,28.0,20.0,45.0,10.6,560
+Pine Nuts,100,g,13.0,14.0,68.0,4.0,673
+Sunflower Seeds,100,g,20.0,8.5,51.0,8.6,584
+Pumpkin Seeds,100,g,15.0,19.0,49.0,6.0,559
+Sesame Seeds,100,g,26.0,17.5,50.0,11.8,565
+Chia Seeds,100,g,42.0,12.0,31.0,27.6,486
+Flax Seeds,100,g,29.0,18.0,42.0,27.3,534
+Chikhalwali,100,g,30.0,10.0,50.0,0.0,600
+Whole Wheat Flour,100,g,74.0,14.0,1.5,12.0,340
+Refined Flour,100,g,77.0,10.0,1.0,3.4,364
+Semolina,100,g,74.0,12.0,1.5,2.0,360
+Ragi Flour,100,g,72.0,7.5,2.0,8.5,335
+Jowar Flour,100,g,73.0,11.0,3.5,9.0,350
+Bajra Flour,100,g,67.0,12.0,5.0,7.0,361
+Oats,100,g,66.0,17.0,6.5,10.6,389
+Rice Flour,100,g,80.0,6.0,1.0,2.0,366
+Besan,100,g,65.0,22.0,6.0,6.0,387
+Almond Flour,100,g,24.0,21.0,50.0,12.5,579
+Coconut Flour,100,g,24.0,9.0,9.0,9.0,225
+White Sugar,100,g,100.0,0.0,0.0,0.0,387
+Brown Sugar,100,g,97.0,0.0,0.0,0.0,373
+Honey,100,g,82.0,0.3,0.0,0.0,304
+Jaggery,100,g,95.0,0.2,0.0,0.0,383
+Maple Syrup,100,g,67.0,0.0,0.0,0.0,260
+Molasses,100,g,75.0,0.0,0.0,0.0,290
+Cheese (Cheddar),100,g,3.0,25.0,33.0,0.0,403
+Cheese (Mozzarella),100,g,3.5,28.0,22.0,0.0,280
+Feta Cheese,100,g,4.0,22.0,21.0,0.0,264
+Paneer Paratha,1,piece,35.0,10.0,8.0,2.0,260
+Butter Chicken,1,cup,8.0,22.0,12.0,0.5,245
+Chicken Tikka Masala,1,cup,10.0,20.0,14.0,1.0,260
+Sambar,1,cup,12.0,3.0,2.0,3.0,85
+Rasam,1,cup,8.0,1.5,1.0,1.5,45
+Chole Bhature,1,serving,75.0,16.0,8.0,8.0,470
+Pav Bhaji,1,serving,35.0,6.0,8.0,3.0,250
+Misal Pav,1,serving,42.0,9.0,6.0,5.0,290
+Vada Pav,1,piece,35.0,5.0,8.0,2.0,240
+Aloo Paratha,1,piece,35.0,6.0,9.0,3.0,240
+Gobi Paratha,1,piece,32.0,6.0,8.0,3.0,225
+Paneer Paratha,1,piece,35.0,10.0,8.0,2.0,260
+Methi Paratha,1,piece,29.0,5.5,7.5,2.5,215
+Rajma Rice,1,cup,45.0,10.0,2.0,5.0,270
+Kidney Beans Curry,1,cup,28.0,6.0,6.0,4.0,210
+Chickpea Curry,1,cup,30.0,7.0,4.0,5.0,220
+Lentil Soup,1,cup,20.0,6.0,2.0,3.0,140
+Mung Bean Soup,1,cup,18.0,5.5,1.5,2.5,130
+Mixed Lentil Soup,1,cup,22.0,7.0,2.5,3.5,160
+Vegetable Dal,1,cup,32.0,8.0,3.0,4.0,210
+Spinach Dal,1,cup,28.0,10.0,4.0,3.5,210
+Tomato Dal,1,cup,30.0,8.0,4.5,3.0,215
+Coconut Dal,1,cup,35.0,9.0,6.0,3.0,260
+Pumpkin Dal,1,cup,28.0,6.0,3.0,3.0,180
+Dal Fry,1,cup,35.0,9.0,5.0,4.0,245
+Dal Bhaat,1,cup,40.0,8.0,4.0,3.5,235
+Idli Sambar,1,serving,20.0,4.0,2.0,2.5,120
+Dosa Chutney,1,serving,35.0,6.0,3.0,1.5,175
+Uttapam Pickle,1,serving,30.0,5.0,3.5,2.0,170
+Upma with Pickle,1,serving,38.0,5.5,6.5,1.5,220
+Tiffin Sambar Rice,1,cup,42.0,5.0,3.0,2.5,210
+Puttu with Sambar,1,serving,35.0,5.0,3.0,3.0,200
+Adai with Chutney,1,serving,24.0,6.5,2.0,3.0,160
+Pesarattu with Chutney,1,serving,22.0,7.0,1.5,2.5,150

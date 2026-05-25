@@ -6,35 +6,50 @@ import re
 
 import anthropic
 
-VISION_PROMPT = """\
+_PROMPT_TEMPLATE = """\
 You are a nutrition assistant specializing in Indian cuisine. Analyze this meal photo \
 and identify every distinct food item visible.
 
-For each item, estimate the quantity in grams based on visual cues \
-(plate size, serving spoon, portion depth, standard bowl sizes).
+You MUST match each item to the closest entry from the list below — use the name EXACTLY \
+as it appears, no variations, no new names.
+
+Known food items:
+{food_names_list}
+
+For each matched item, estimate the quantity using the most natural unit:
+- Pieces/items (roti, paratha, naan, poori, idli, dosa, samosa, egg): number of pieces
+- Cups (rice, dal, curry, sabzi, raita, soup): number of cups (0.5, 1, 1.5, 2 etc.)
+- Weight (pakora, paneer, chicken, fish, meat): grams
 
 Return ONLY a valid JSON array — no markdown, no explanation:
 [
-  {"name": "dal makhani", "quantity_g": 150},
-  {"name": "basmati rice", "quantity_g": 200}
+  {{"name": "Roti (Plain Wheat)", "quantity": 2, "unit": "piece"}},
+  {{"name": "Dal Makhani", "quantity": 1, "unit": "cup"}}
 ]
 
 Guidelines:
-- Use common Indian food names where applicable \
-(e.g. "rajma", "poha", "idli", "paneer butter masala", "roti")
 - List each dish component separately, not as one combined entry
 - If quantity is unclear, use a typical single-serving estimate
 - Return [] if no food is visible
+- Do NOT invent names outside the list above
 """
 
 
-def analyze_meal_photo(image_bytes: bytes, media_type: str) -> list[dict]:
+def analyze_meal_photo(
+    image_bytes: bytes,
+    media_type: str,
+    food_names: list[str],
+) -> list[dict]:
     """
     Send a meal photo to Claude vision and return identified foods with quantities.
-    Returns [{"name": str, "quantity_g": float}, ...]
+    Returns [{"name": str, "quantity": float, "unit": str}, ...]
+    food_names should be the full list from indian_food_items.item_name.
     """
     client = anthropic.Anthropic()
     image_b64 = base64.standard_b64encode(image_bytes).decode()
+
+    names_block = "\n".join(f"- {n}" for n in food_names)
+    prompt = _PROMPT_TEMPLATE.format(food_names_list=names_block)
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
@@ -50,7 +65,7 @@ def analyze_meal_photo(image_bytes: bytes, media_type: str) -> list[dict]:
                         "data": image_b64,
                     },
                 },
-                {"type": "text", "text": VISION_PROMPT},
+                {"type": "text", "text": prompt},
             ],
         }],
     )
@@ -63,7 +78,7 @@ def analyze_meal_photo(image_bytes: bytes, media_type: str) -> list[dict]:
         items = json.loads(match.group())
         return [
             i for i in items
-            if isinstance(i, dict) and "name" in i and "quantity_g" in i
+            if isinstance(i, dict) and "name" in i and "quantity" in i
         ]
     except json.JSONDecodeError:
         return []

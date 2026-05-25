@@ -17,13 +17,14 @@
         {% for item in items %}
         <div
             class="bg-white rounded-2xl shadow p-4 item-row"
-            data-food-code="{{ item.food_code or '' }}"
             data-food-name="{{ item.food_name }}"
-            data-energy="{{ item.energy_kcal_per100g }}"
-            data-protein="{{ item.protein_g_per100g }}"
-            data-fat="{{ item.fat_g_per100g }}"
-            data-carbs="{{ item.carbs_g_per100g }}"
-            data-fiber="{{ item.fiber_g_per100g }}"
+            data-base-qty="{{ item.base_quantity }}"
+            data-unit="{{ item.unit }}"
+            data-calories="{{ item.calories_per_base }}"
+            data-protein="{{ item.protein_per_base }}"
+            data-fat="{{ item.fat_per_base }}"
+            data-carbs="{{ item.carbs_per_base }}"
+            data-fiber="{{ item.fiber_per_base }}"
         >
             <div class="flex items-start justify-between mb-3">
                 <div class="flex-1 min-w-0 pr-3">
@@ -39,10 +40,10 @@
                         type="number"
                         class="quantity-input w-16 border border-gray-300 rounded-lg px-2 py-1
                                text-sm text-right focus:outline-none focus:ring-2 focus:ring-green-400"
-                        value="{{ item.quantity_g | int }}"
-                        min="1" max="2000" step="1"
+                        value="{{ item.quantity }}"
+                        min="0.5" max="50" step="0.5"
                     >
-                    <span class="text-xs text-gray-400">g</span>
+                    <span class="text-xs text-gray-400">{{ item.unit }}</span>
                 </div>
             </div>
 
@@ -97,9 +98,10 @@
 const rows = Array.from(document.querySelectorAll('.item-row'));
 
 function recalcRow(row) {
-    const qty    = parseFloat(row.querySelector('.quantity-input').value) || 0;
-    const factor = qty / 100;
-    row.querySelector('.macro-cal').textContent     = Math.round((parseFloat(row.dataset.energy)  || 0) * factor);
+    const qty     = parseFloat(row.querySelector('.quantity-input').value) || 0;
+    const baseQty = parseFloat(row.dataset.baseQty) || 1;
+    const factor  = qty / baseQty;
+    row.querySelector('.macro-cal').textContent     = Math.round((parseFloat(row.dataset.calories) || 0) * factor);
     row.querySelector('.macro-protein').textContent = ((parseFloat(row.dataset.protein) || 0) * factor).toFixed(1);
     row.querySelector('.macro-fat').textContent     = ((parseFloat(row.dataset.fat)     || 0) * factor).toFixed(1);
     row.querySelector('.macro-carbs').textContent   = ((parseFloat(row.dataset.carbs)   || 0) * factor).toFixed(1);
@@ -108,11 +110,13 @@ function recalcRow(row) {
 function recalcTotals() {
     let cal = 0, pro = 0, fat = 0, carb = 0;
     rows.forEach(row => {
-        const f = (parseFloat(row.querySelector('.quantity-input').value) || 0) / 100;
-        cal  += (parseFloat(row.dataset.energy)  || 0) * f;
-        pro  += (parseFloat(row.dataset.protein) || 0) * f;
-        fat  += (parseFloat(row.dataset.fat)     || 0) * f;
-        carb += (parseFloat(row.dataset.carbs)   || 0) * f;
+        const qty    = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const base   = parseFloat(row.dataset.baseQty) || 1;
+        const f      = qty / base;
+        cal  += (parseFloat(row.dataset.calories) || 0) * f;
+        pro  += (parseFloat(row.dataset.protein)  || 0) * f;
+        fat  += (parseFloat(row.dataset.fat)       || 0) * f;
+        carb += (parseFloat(row.dataset.carbs)     || 0) * f;
     });
     document.getElementById('total-cal').textContent     = Math.round(cal);
     document.getElementById('total-protein').textContent = pro.toFixed(1);
@@ -132,14 +136,15 @@ recalcTotals();
 // Pack items into the hidden JSON field before submit
 document.getElementById('confirm-form').addEventListener('submit', () => {
     const items = rows.map(row => ({
-        food_code:            row.dataset.foodCode || null,
-        food_name:            row.dataset.foodName,
-        quantity_g:           parseFloat(row.querySelector('.quantity-input').value) || 0,
-        energy_kcal_per100g:  parseFloat(row.dataset.energy)  || 0,
-        protein_g_per100g:    parseFloat(row.dataset.protein) || 0,
-        fat_g_per100g:        parseFloat(row.dataset.fat)     || 0,
-        carbs_g_per100g:      parseFloat(row.dataset.carbs)   || 0,
-        fiber_g_per100g:      parseFloat(row.dataset.fiber)   || 0,
+        food_name:          row.dataset.foodName,
+        quantity:           parseFloat(row.querySelector('.quantity-input').value) || 0,
+        unit:               row.dataset.unit,
+        base_quantity:      parseFloat(row.dataset.baseQty)  || 1,
+        calories_per_base:  parseFloat(row.dataset.calories) || 0,
+        protein_per_base:   parseFloat(row.dataset.protein)  || 0,
+        fat_per_base:       parseFloat(row.dataset.fat)      || 0,
+        carbs_per_base:     parseFloat(row.dataset.carbs)    || 0,
+        fiber_per_base:     parseFloat(row.dataset.fiber)    || 0,
     }));
     document.getElementById('items-json').value = JSON.stringify(items);
 });

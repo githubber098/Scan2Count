@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 
 from dependencies import get_current_user
-from services.foods import lookup_food, macros_for_quantity
+from services.foods import get_all_food_names, lookup_food, macros_for_quantity
 from services.profile import get_supabase_admin
 from services.vision import analyze_meal_photo
 
@@ -22,8 +22,40 @@ def render(name: str, context: dict, status_code: int = 200) -> HTMLResponse:
     return HTMLResponse(jinja_env.get_template(name).render(**context), status_code=status_code)
 
 
+def _build_line_item(ai_name: str, food: dict | None, user_qty: float, ai_unit: str) -> dict:
+    """Shared helper used by both photo and manual flows."""
+    if food:
+        base_qty = float(food["quantity"] or 1)
+        return {
+            "ai_name":           ai_name,
+            "food_name":         food["item_name"],
+            "quantity":          user_qty,
+            "unit":              food["unit"],
+            "base_quantity":     base_qty,
+            "calories_per_base": float(food.get("calories")      or 0),
+            "protein_per_base":  float(food.get("protein")       or 0),
+            "fat_per_base":      float(food.get("fat")            or 0),
+            "carbs_per_base":    float(food.get("carbohydrates")  or 0),
+            "fiber_per_base":    float(food.get("fiber")          or 0),
+            **macros_for_quantity(food, user_qty),
+            "matched": True,
+        }
+    else:
+        return {
+            "ai_name":           ai_name,
+            "food_name":         ai_name,
+            "quantity":          user_qty,
+            "unit":              ai_unit,
+            "base_quantity":     user_qty,   # factor = 1 so macros stay 0
+            "calories_per_base": 0, "protein_per_base": 0,
+            "fat_per_base":      0, "carbs_per_base":   0, "fiber_per_base": 0,
+            "calories": 0, "protein_g": 0, "fat_g": 0, "carbs_g": 0, "fiber_g": 0,
+            "matched": False,
+        }
+
+
 # ---------------------------------------------------------------------------
-# GET /log — upload form
+# GET /log — upload / manual entry page
 # ---------------------------------------------------------------------------
 
 @router.get("/log", response_class=HTMLResponse)
@@ -47,12 +79,13 @@ async def log_submit(
         return render("log.html", {**ctx, "error": "Please upload a JPEG, PNG, or WebP image."}, 400)
 
     image_bytes = await photo.read()
-
     if len(image_bytes) > MAX_BYTES:
         return render("log.html", {**ctx, "error": "Image too large (max 5 MB). Please compress it first."}, 400)
 
+    food_names = get_all_food_names()
+
     try:
-        ai_items = analyze_meal_photo(image_bytes, photo.content_type)
+        ai_items = analyze_meal_photo(image_bytes, photo.content_type, food_names)
     except Exception:
         return render("log.html", {**ctx, "error": "Could not reach the AI service. Please try again."}, 502)
 
@@ -63,37 +96,54 @@ async def log_submit(
             422,
         )
 
-    # Match each AI item against IFCT
     line_items = []
     for ai in ai_items:
         food = lookup_food(ai["name"])
-        qty = float(ai["quantity_g"])
+        qty  = float(ai.get("quantity") or 1)
+        unit = ai.get("unit", "serving")
+        line_items.append(_build_line_item(ai["name"], food, qty, unit))
 
+    return render("log_confirm.html", {"request": request, "user": user.email, "items": line_items})
+
+
+# ---------------------------------------------------------------------------
+# POST /log/manual — text entry → confirm screen
+# ---------------------------------------------------------------------------
+
+@router.post("/log/manual", response_class=HTMLResponse)
+async def manual_submit(
+    request: Request,
+    user=Depends(get_current_user),
+    items_json: str = Form(...),
+):
+    ctx = {"request": request, "user": user.email}
+
+    try:
+        raw_items = json.loads(items_json)  # [{name, servings}]
+    except (json.JSONDecodeError, ValueError):
+        return render("log.html", {**ctx, "error": "Invalid input. Please try again."}, 400)
+
+    if not raw_items:
+        return render("log.html", {**ctx, "error": "No items entered."}, 400)
+
+    line_items = []
+    for item in raw_items:
+        name     = str(item.get("name", "")).strip()
+        servings = float(item.get("servings") or 1)
+        if not name:
+            continue
+
+        food = lookup_food(name)
         if food:
-            line_items.append({
-                "ai_name": ai["name"],
-                "food_code": food["food_code"],
-                "food_name": food["food_name"],
-                "quantity_g": qty,
-                "energy_kcal_per100g": food["energy_kcal"] or 0,
-                "protein_g_per100g":   food["protein_g"]   or 0,
-                "fat_g_per100g":       food["fat_g"]        or 0,
-                "carbs_g_per100g":     food["carbs_g"]      or 0,
-                "fiber_g_per100g":     food["fiber_g"]      or 0,
-                **macros_for_quantity(food, qty),
-                "matched": True,
-            })
+            base_qty  = float(food["quantity"] or 1)
+            user_qty  = servings * base_qty   # e.g. 2 servings × 1 piece = 2 pieces
         else:
-            line_items.append({
-                "ai_name":  ai["name"],
-                "food_code": None,
-                "food_name": ai["name"],
-                "quantity_g": qty,
-                "energy_kcal_per100g": 0, "protein_g_per100g": 0,
-                "fat_g_per100g": 0, "carbs_g_per100g": 0, "fiber_g_per100g": 0,
-                "calories": 0, "protein_g": 0, "fat_g": 0, "carbs_g": 0, "fiber_g": 0,
-                "matched": False,
-            })
+            user_qty  = servings              # unmatched: store as-is
+
+        line_items.append(_build_line_item(name, food, user_qty, "serving"))
+
+    if not line_items:
+        return render("log.html", {**ctx, "error": "None of those items were recognised. Check the spelling."}, 400)
 
     return render("log_confirm.html", {"request": request, "user": user.email, "items": line_items})
 
@@ -116,19 +166,19 @@ async def log_save(
     if not items:
         return RedirectResponse(url="/home", status_code=303)
 
-    # Recalculate macros server-side from submitted quantities (never trust client maths)
+    # Recalculate macros server-side (never trust client math)
     final_items = []
     for item in items:
-        qty = float(item.get("quantity_g") or 0)
-        factor = qty / 100
-        e   = float(item.get("energy_kcal_per100g") or 0)
-        p   = float(item.get("protein_g_per100g")   or 0)
-        fat = float(item.get("fat_g_per100g")        or 0)
-        c   = float(item.get("carbs_g_per100g")      or 0)
-        fi  = float(item.get("fiber_g_per100g")      or 0)
+        qty      = float(item.get("quantity")         or 0)
+        base_qty = float(item.get("base_quantity")    or 1)
+        factor   = qty / base_qty if base_qty else 0
+        e   = float(item.get("calories_per_base")  or 0)
+        p   = float(item.get("protein_per_base")   or 0)
+        fat = float(item.get("fat_per_base")        or 0)
+        c   = float(item.get("carbs_per_base")      or 0)
+        fi  = float(item.get("fiber_per_base")      or 0)
 
         final_items.append({
-            "food_code": item.get("food_code"),
             "food_name": item.get("food_name", ""),
             "quantity_g": qty,
             "calories":  round(e   * factor, 1),

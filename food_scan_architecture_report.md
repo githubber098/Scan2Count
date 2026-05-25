@@ -143,7 +143,7 @@ This is intentionally generous. At ~28 hrs/week combined, but realistically less
        ┌────────────────┐     ┌────────────────────┐   ┌─────────────────┐
        │  Supabase      │     │  Claude API        │   │  IFCT + USDA    │
        │  - Postgres    │     │  - Vision (Sonnet) │   │  Food Database  │
-       │  - Auth (JWT)  │     │  - Chat (Haiku)    │   │  (loaded into   │
+       │  - Auth (JWT)  │     │  - Chat (Groq)    │   │  (loaded into   │
        │  - Storage     │     └────────────────────┘   │   our Postgres) │
        │    (photos)    │                              └─────────────────┘
        └────────────────┘
