@@ -26,7 +26,7 @@ async def onboarding_page(request: Request, user=Depends(get_current_user)):
     profile = get_profile(str(user.id))
     if profile:
         return RedirectResponse(url="/home", status_code=303)
-    return render("onboarding.html", {"request": request})
+    return render("onboarding.html", {"request": request, "user": user.email})
 
 
 @router.post("/onboarding")
@@ -138,6 +138,7 @@ async def home_page(request: Request, user=Depends(get_current_user)):
 
     return render("home.html", {
         "request":     request,
+        "user":        user.email,
         "profile":     profile,
         "meals":       meals,
         "totals":      totals,
