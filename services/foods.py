@@ -7,6 +7,26 @@ from services.profile import get_supabase_admin
 _SELECT = "id, item_name, quantity, unit, calories, protein, fat, carbohydrates, fiber"
 
 
+def _parse_synonyms(raw) -> list[str]:
+    """
+    Parse the synonyms column, which may be stored as:
+      - a TEXT comma-separated string: "Chapati, Chappati, Phulka"
+      - a TEXT[] array: ["Chapati", "Chappati", "Phulka"]
+      - a TEXT[] with one element containing a CSV string: ["Chapati, Chappati, Phulka"]
+    Returns a clean list of individual synonym strings.
+    """
+    if not raw:
+        return []
+    if isinstance(raw, str):
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    if isinstance(raw, list):
+        result = []
+        for item in raw:
+            result.extend(_parse_synonyms(item))
+        return result
+    return []
+
+
 def get_all_food_names() -> list[str]:
     """Return every item_name from indian_food_items (used to constrain vision prompt)."""
     supabase = get_supabase_admin()
@@ -14,26 +34,53 @@ def get_all_food_names() -> list[str]:
     return [row["item_name"] for row in (resp.data or [])]
 
 
+def get_synonym_map() -> dict[str, str]:
+    """
+    Return {lowercase_synonym: canonical_item_name}.
+    Synonyms may be stored as a comma-separated TEXT string or a TEXT[] array —
+    _parse_synonyms handles both.
+    """
+    supabase = get_supabase_admin()
+    resp = supabase.table("indian_food_items").select("item_name, synonyms").execute()
+    mapping: dict[str, str] = {}
+    for row in (resp.data or []):
+        for syn in _parse_synonyms(row.get("synonyms")):
+            mapping[syn.lower()] = row["item_name"]
+    return mapping
+
+
+def get_fuzzy_targets() -> dict[str, str]:
+    """
+    Return {name_or_synonym: canonical_item_name} for use as fuzzy matching targets.
+    Includes every item_name AND every synonym so that misspellings like "Chappatti"
+    can match the synonym "Chapati" (score ~96) rather than only item_names.
+    """
+    supabase = get_supabase_admin()
+    resp = supabase.table("indian_food_items").select("item_name, synonyms").execute()
+    targets: dict[str, str] = {}
+    for row in (resp.data or []):
+        canonical = row["item_name"]
+        targets[canonical] = canonical
+        for syn in _parse_synonyms(row.get("synonyms")):
+            targets[syn] = canonical
+    return targets
+
+
 def lookup_food(name: str) -> Optional[dict]:
     """
-    Find the best match in indian_food_items for a food name.
-    Tries: exact item_name → synonym array → partial item_name ilike.
-    Returns the row dict or None.
+    Find a row in indian_food_items by exact / partial item_name match.
+    Synonym matching is NOT done here — call get_synonym_map() before this
+    and resolve to the canonical name first.
     """
     supabase = get_supabase_admin()
     name = name.strip()
 
-    # 1. Exact / case-insensitive match on item_name
+    # 1. Exact case-insensitive match
     resp = supabase.table("indian_food_items").select(_SELECT).ilike("item_name", name).limit(1).execute()
     if resp.data:
         return resp.data[0]
 
-    # 2. Synonym array contains the description (Postgres: 'name' = ANY(synonyms))
-    resp = supabase.table("indian_food_items").select(_SELECT).contains("synonyms", [name.lower()]).limit(1).execute()
-    if resp.data:
-        return resp.data[0]
-
-    # 3. Partial match on item_name
+    # 2. Partial match (e.g. "roti" inside "Roti (Plain Wheat)")
     resp = supabase.table("indian_food_items").select(_SELECT).ilike("item_name", f"%{name}%").limit(1).execute()
     if resp.data:
         return resp.data[0]

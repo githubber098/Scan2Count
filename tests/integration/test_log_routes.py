@@ -4,10 +4,10 @@ Integration tests for the meal-logging routes.
 Routes covered:
   GET  /log
   POST /log        (photo analysis → confirm screen)
-  POST /log/manual (text entry → Groq match → confirm screen)
+  POST /log/manual (text entry → synonym map → ilike → fuzzy → confirm screen)
   POST /log/save   (confirm screen → persist to DB → redirect)
 
-All external services (Claude vision, Groq, Supabase) are mocked.
+All external services (Claude vision, Supabase) are mocked.
 Auth is bypassed via auth_client (dependency override).
 """
 from __future__ import annotations
@@ -162,37 +162,66 @@ class TestLogManualSubmit:
                                     data={"items_json": "not-valid-json"})
         assert response.status_code == 400
 
-    def test_direct_lookup_shows_confirm_screen(self, auth_client):
-        """lookup_food finds the food by name/synonym on the first call."""
-        with patch("routers.log.get_all_food_names", return_value=["Dal Makhani"]), \
-             patch("routers.log.lookup_food", return_value={
-                 "id": 6, "item_name": "Dal Makhani",
-                 "quantity": 1.0, "unit": "cup",
-                 "calories": 270, "protein": 12,
-                 "fat": 8, "carbohydrates": 35, "fiber": 6,
-             }):
+    def test_synonym_resolves_to_canonical_name(self, auth_client):
+        """synonym_map hit → lookup_food called with canonical name → confirm screen."""
+        dal = {"id": 6, "item_name": "Dal Makhani",
+               "quantity": 1.0, "unit": "cup",
+               "calories": 270, "protein": 12,
+               "fat": 8, "carbohydrates": 35, "fiber": 6}
+        with patch("routers.log.get_synonym_map", return_value={"dal": "Dal Makhani"}), \
+             patch("routers.log.get_fuzzy_targets", return_value={"Dal Makhani": "Dal Makhani"}), \
+             patch("routers.log.lookup_food", return_value=dal):
             response = auth_client.post("/log/manual", data={
-                "items_json": json.dumps([{"name": "dal makhani", "servings": 1}])
+                "items_json": json.dumps([{"name": "dal", "servings": 1}])
             })
         assert response.status_code == 200
         assert b"Dal Makhani" in response.content
         assert b"Confirm meal" in response.content
 
-    def test_fuzzy_fallback_finds_food(self, auth_client):
-        """When lookup_food misses, fuzzy_match_food_name returns a canonical name
-        and a second lookup_food call finds the food."""
-        with patch("routers.log.get_all_food_names", return_value=["Roti (Plain Wheat)"]), \
-             patch("routers.log.fuzzy_match_food_name", return_value="Roti (Plain Wheat)"), \
-             patch("routers.log.lookup_food", side_effect=[None, FAKE_FOOD]):
+    def test_direct_lookup_when_no_synonym(self, auth_client):
+        """No synonym entry → lookup_food called with raw description."""
+        with patch("routers.log.get_synonym_map", return_value={}), \
+             patch("routers.log.get_fuzzy_targets", return_value={"Roti (Plain Wheat)": "Roti (Plain Wheat)"}), \
+             patch("routers.log.lookup_food", return_value=FAKE_FOOD):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([{"name": "roti", "servings": 1}])
             })
         assert response.status_code == 200
         assert b"Roti (Plain Wheat)" in response.content
 
+    def test_fuzzy_fallback_when_synonym_and_lookup_both_miss(self, auth_client):
+        """synonym miss + lookup miss → fuzzy on targets finds canonical → lookup hits."""
+        with patch("routers.log.get_synonym_map", return_value={}), \
+             patch("routers.log.get_fuzzy_targets", return_value={"Roti (Plain Wheat)": "Roti (Plain Wheat)"}), \
+             patch("routers.log.fuzzy_match_food_name", return_value="Roti (Plain Wheat)"), \
+             patch("routers.log.lookup_food", side_effect=[None, FAKE_FOOD]):
+            response = auth_client.post("/log/manual", data={
+                "items_json": json.dumps([{"name": "rotii", "servings": 1}])
+            })
+        assert response.status_code == 200
+        assert b"Roti (Plain Wheat)" in response.content
+
+    def test_fuzzy_matches_synonym_resolves_to_canonical(self, auth_client):
+        """fuzzy key is a synonym → fuzzy_target_map resolves it to canonical item_name."""
+        fuzzy_targets = {
+            "Roti (Plain Wheat)": "Roti (Plain Wheat)",
+            "Chapati": "Roti (Plain Wheat)",
+            "Chappati": "Roti (Plain Wheat)",
+        }
+        with patch("routers.log.get_synonym_map", return_value={}), \
+             patch("routers.log.get_fuzzy_targets", return_value=fuzzy_targets), \
+             patch("routers.log.fuzzy_match_food_name", return_value="Chapati"), \
+             patch("routers.log.lookup_food", side_effect=[None, FAKE_FOOD]):
+            response = auth_client.post("/log/manual", data={
+                "items_json": json.dumps([{"name": "chappatti", "servings": 1}])
+            })
+        assert response.status_code == 200
+        assert b"Roti (Plain Wheat)" in response.content
+
     def test_no_match_found_shows_warning(self, auth_client):
-        """Both lookup paths return nothing — item shown as unmatched."""
-        with patch("routers.log.get_all_food_names", return_value=[]), \
+        """All three paths miss — item shown as unmatched (not a hard error)."""
+        with patch("routers.log.get_synonym_map", return_value={}), \
+             patch("routers.log.get_fuzzy_targets", return_value={}), \
              patch("routers.log.lookup_food", return_value=None), \
              patch("routers.log.fuzzy_match_food_name", return_value=None):
             response = auth_client.post("/log/manual", data={
@@ -207,7 +236,11 @@ class TestLogManualSubmit:
                 "quantity": 1.0, "unit": "cup", "calories": 270,
                 "protein": 12, "fat": 8, "carbohydrates": 35, "fiber": 6}
 
-        with patch("routers.log.get_all_food_names", return_value=["Roti (Plain Wheat)", "Dal Makhani"]), \
+        with patch("routers.log.get_synonym_map", return_value={}), \
+             patch("routers.log.get_fuzzy_targets", return_value={
+                 "Roti (Plain Wheat)": "Roti (Plain Wheat)",
+                 "Dal Makhani": "Dal Makhani",
+             }), \
              patch("routers.log.lookup_food", side_effect=[roti, dal]):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([

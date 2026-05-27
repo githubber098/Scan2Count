@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from rapidfuzz import fuzz, process
+from rapidfuzz import fuzz, process, utils
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ def fuzzy_match_food_name(
         description,
         food_names,
         scorer=fuzz.WRatio,
+        processor=utils.default_process,  # lowercases + strips both sides before scoring
         score_cutoff=threshold,
     )
     if match is None:

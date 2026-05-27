@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 
 from dependencies import get_current_user
-from services.foods import get_all_food_names, lookup_food, macros_for_quantity
+from services.foods import get_all_food_names, get_fuzzy_targets, get_synonym_map, lookup_food, macros_for_quantity
 from services.fuzzy_match import fuzzy_match_food_name
 from services.profile import get_supabase_admin
 from services.vision import analyze_meal_photo
@@ -127,7 +127,8 @@ async def manual_submit(
     if not raw_items:
         return render("log.html", {**ctx, "error": "No items entered."}, 400)
 
-    food_names = get_all_food_names()
+    synonym_map       = get_synonym_map()    # {lowercase_synonym: canonical_item_name}
+    fuzzy_target_map  = get_fuzzy_targets()  # {item_name_or_synonym: canonical_item_name}
 
     line_items = []
     for item in raw_items:
@@ -136,13 +137,20 @@ async def manual_submit(
         if not description:
             continue
 
-        # lookup_food tries: exact → synonym → partial ilike
-        # If all fail, try fuzzy match on item_names then look up the winner
-        food = lookup_food(description)
+        # 1. Exact synonym match (case-insensitive Python dict lookup)
+        canonical = synonym_map.get(description.lower())
+        food = lookup_food(canonical) if canonical else None
+
+        # 2. Exact / partial ilike on item_name
         if not food:
-            fuzzy_name = fuzzy_match_food_name(description, food_names)
-            if fuzzy_name:
-                food = lookup_food(fuzzy_name)
+            food = lookup_food(description)
+
+        # 3. Fuzzy against item_names AND synonyms — catches misspellings of synonyms
+        if not food:
+            fuzzy_key = fuzzy_match_food_name(description, list(fuzzy_target_map.keys()))
+            if fuzzy_key:
+                canonical = fuzzy_target_map.get(fuzzy_key, fuzzy_key)
+                food = lookup_food(canonical)
 
         if food:
             base_qty = float(food["quantity"] or 1)

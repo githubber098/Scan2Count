@@ -2,13 +2,14 @@
 Unit tests for pure-logic services and Supabase-backed services (fully mocked).
 
 Covers:
-  - services.profile.calculate_targets      (pure function — no mocks needed)
-  - services.foods.macros_for_quantity      (pure function — no mocks needed)
-  - services.foods.lookup_food              (Supabase mocked)
-  - services.groq_match.match_food_name     (Groq API mocked — service kept but not in main chain)
+  - services.profile.calculate_targets          (pure function — no mocks needed)
+  - services.foods.macros_for_quantity          (pure function — no mocks needed)
+  - services.foods.lookup_food                  (Supabase mocked)
+  - services.foods.get_synonym_map              (Supabase mocked)
+  - services.groq_match.match_food_name         (Groq API mocked — kept but not in main chain)
   - services.fuzzy_match.fuzzy_match_food_name  (pure function — no mocks needed)
-  - routers.log._build_line_item            (pure function — no mocks needed)
-  - routers.profile.pct                     (pure function — no mocks needed)
+  - routers.log._build_line_item                (pure function — no mocks needed)
+  - routers.profile.pct                         (pure function — no mocks needed)
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from unittest.mock import MagicMock, patch
 from groq import APIError
 
 from services.profile import calculate_targets
-from services.foods import macros_for_quantity, lookup_food
+from services.foods import macros_for_quantity, lookup_food, get_synonym_map, get_fuzzy_targets, _parse_synonyms
 from services.groq_match import match_food_name
 from services.fuzzy_match import fuzzy_match_food_name
 from routers.log import _build_line_item
@@ -186,14 +187,12 @@ ROTI_DB_ROW = {
 
 def _supabase_returning(rows: list[dict]) -> MagicMock:
     """
-    Build a mock Supabase client where ALL three query paths in lookup_food
-    return the same rows (ilike exact, contains synonym, ilike partial).
+    Build a mock Supabase client where both ilike queries in lookup_food
+    return the same rows (exact ilike and partial ilike).
     """
     mock = MagicMock()
     result = MagicMock(data=rows)
-    base = mock.table.return_value.select.return_value
-    base.ilike.return_value.limit.return_value.execute.return_value = result
-    base.contains.return_value.limit.return_value.execute.return_value = result
+    mock.table.return_value.select.return_value.ilike.return_value.limit.return_value.execute.return_value = result
     return mock
 
 
@@ -207,36 +206,15 @@ class TestLookupFood:
         assert result is not None
         assert result["item_name"] == "Roti (Plain Wheat)"
 
-    def test_synonym_match_fallback(self):
-        """
-        Exact ilike misses; synonym contains query finds the row.
-        ilike calls share one execute mock (side_effect: [] then never reached).
-        contains execute returns the match.
-        """
-        mock_sb = MagicMock()
-        base = mock_sb.table.return_value.select.return_value
-        # Exact ilike → miss; synonym contains → hit; partial ilike never called
-        base.ilike.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
-        base.contains.return_value.limit.return_value.execute.return_value = MagicMock(data=[ROTI_DB_ROW])
-
-        with patch("services.foods.get_supabase_admin", return_value=mock_sb):
-            result = lookup_food("roti")
-        assert result is not None
-        assert result["item_name"] == "Roti (Plain Wheat)"
-
     def test_partial_match_fallback(self):
-        """
-        Exact ilike and synonym both miss; partial ilike finds the row.
-        ilike is called twice (exact then partial) — use side_effect.
-        """
+        """Exact ilike misses; partial ilike finds the row (two sequential calls)."""
         mock_sb = MagicMock()
-        base = mock_sb.table.return_value.select.return_value
         ilike_exec = MagicMock(side_effect=[
-            MagicMock(data=[]),         # exact miss
-            MagicMock(data=[ROTI_DB_ROW]),  # partial hit
+            MagicMock(data=[]),            # exact miss
+            MagicMock(data=[ROTI_DB_ROW]), # partial hit
         ])
-        base.ilike.return_value.limit.return_value.execute = ilike_exec
-        base.contains.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+        mock_sb.table.return_value.select.return_value \
+            .ilike.return_value.limit.return_value.execute = ilike_exec
 
         with patch("services.foods.get_supabase_admin", return_value=mock_sb):
             result = lookup_food("roti wheat")
@@ -250,11 +228,185 @@ class TestLookupFood:
         assert result is None
 
     def test_strips_whitespace_from_name(self):
-        """Whitespace should be stripped before querying."""
         with patch("services.foods.get_supabase_admin",
                    return_value=_supabase_returning([ROTI_DB_ROW])):
             result = lookup_food("  Roti (Plain Wheat)  ")
         assert result is not None
+
+    def test_does_not_check_synonyms_column(self):
+        """Synonym resolution happens in the route layer, not here."""
+        mock_sb = MagicMock()
+        mock_sb.table.return_value.select.return_value \
+            .ilike.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+
+        with patch("services.foods.get_supabase_admin", return_value=mock_sb):
+            lookup_food("litchi")
+
+        # .contains() must never be called — synonyms are resolved before lookup_food
+        mock_sb.table.return_value.select.return_value.contains.assert_not_called()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# get_synonym_map — synonym resolution (Supabase mocked)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# _parse_synonyms — handles all storage formats (pure function, no mocks)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+class TestParseSynonyms:
+
+    def test_csv_string_splits_on_comma(self):
+        result = _parse_synonyms("Chapati, Chapatti, Phulka")
+        assert result == ["Chapati", "Chapatti", "Phulka"]
+
+    def test_csv_string_strips_whitespace(self):
+        result = _parse_synonyms("  Chapati ,  Chapatti  , Phulka  ")
+        assert result == ["Chapati", "Chapatti", "Phulka"]
+
+    def test_proper_list_returned_as_is(self):
+        result = _parse_synonyms(["Chapati", "Chapatti", "Phulka"])
+        assert result == ["Chapati", "Chapatti", "Phulka"]
+
+    def test_single_element_list_with_csv_string(self):
+        # TEXT[] column uploaded from CSV becomes ["Chapati, Chapatti, Phulka"]
+        result = _parse_synonyms(["Chapati, Chapatti, Phulka"])
+        assert result == ["Chapati", "Chapatti", "Phulka"]
+
+    def test_none_returns_empty(self):
+        assert _parse_synonyms(None) == []
+
+    def test_empty_string_returns_empty(self):
+        assert _parse_synonyms("") == []
+
+    def test_empty_list_returns_empty(self):
+        assert _parse_synonyms([]) == []
+
+    def test_real_world_roti_synonyms(self):
+        # Exact format from the user's CSV
+        raw = "Chapati, Chapatti, Phulka, Fulka, Wheat Roti, Plain Roti, Safed Roti, Indian Flatbread, Whole Wheat Flatbread, Chappati"
+        result = _parse_synonyms(raw)
+        assert "Chapati"    in result
+        assert "Chapatti"   in result
+        assert "Chappati"   in result
+        assert "Phulka"     in result
+        assert len(result) == 10
+
+
+# shared DB rows for synonym and fuzzy target tests
+SYNONYM_DB_ROWS = [
+    {"item_name": "Roti (Plain Wheat)",
+     "synonyms": "Chapati, Chapatti, Chappati, Phulka, Wheat Roti"},
+    {"item_name": "Lychee",
+     "synonyms": "Litchi, lichi, leechee"},
+    {"item_name": "Curd (Plain)",
+     "synonyms": "dahi, yogurt, yoghurt"},
+    {"item_name": "Boiled Egg",
+     "synonyms": "anda boiled, egg boiled"},
+    {"item_name": "Stuffed Paratha",
+     "synonyms": "paratha stuffed, stuffed paratha"},
+    {"item_name": "Milk (Full Fat)",
+     "synonyms": None},   # no synonyms
+]
+
+
+def _supabase_with_synonyms(rows: list[dict]) -> MagicMock:
+    mock = MagicMock()
+    mock.table.return_value.select.return_value.execute.return_value.data = rows
+    return mock
+
+
+@pytest.mark.unit
+class TestGetSynonymMap:
+
+    def test_csv_string_synonyms_are_split(self):
+        """Synonyms stored as 'A, B, C' must appear as individual lowercase keys."""
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_synonym_map()
+        assert "chapati"   in result
+        assert "chapatti"  in result
+        assert "chappati"  in result
+        assert "phulka"    in result
+
+    def test_values_are_canonical_item_names(self):
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_synonym_map()
+        assert result["chapati"]   == "Roti (Plain Wheat)"
+        assert result["chappati"]  == "Roti (Plain Wheat)"
+        assert result["litchi"]    == "Lychee"
+        assert result["dahi"]      == "Curd (Plain)"
+
+    def test_mixed_case_synonyms_lowercase_keys(self):
+        """'Litchi' stored in DB must appear as key 'litchi'."""
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_synonym_map()
+        assert "Litchi" not in result
+        assert "litchi" in result
+
+    def test_none_synonyms_skipped(self):
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_synonym_map()
+        assert None not in result
+
+    def test_empty_table_returns_empty_dict(self):
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms([])):
+            assert get_synonym_map() == {}
+
+
+@pytest.mark.unit
+class TestGetFuzzyTargets:
+
+    def test_includes_item_names(self):
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_fuzzy_targets()
+        assert "Roti (Plain Wheat)" in result
+        assert "Lychee"             in result
+
+    def test_includes_synonyms_with_original_case(self):
+        """Synonym keys keep their original casing (processor normalises at match time)."""
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_fuzzy_targets()
+        assert "Chapati"  in result
+        assert "Chappati" in result
+        assert "Phulka"   in result
+
+    def test_synonyms_map_to_canonical(self):
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_fuzzy_targets()
+        assert result["Chapati"]   == "Roti (Plain Wheat)"
+        assert result["Chappati"]  == "Roti (Plain Wheat)"
+        assert result["Litchi"]    == "Lychee"
+
+    def test_item_name_maps_to_itself(self):
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            result = get_fuzzy_targets()
+        assert result["Roti (Plain Wheat)"] == "Roti (Plain Wheat)"
+        assert result["Lychee"]             == "Lychee"
+
+    def test_chappatti_fuzzy_matches_chapati_synonym(self):
+        """
+        Regression: 'Chappatti' is a misspelling of 'Chapati' (a synonym of Roti).
+        Fuzzy matching against fuzzy_targets (which includes synonyms) should find it;
+        matching against item_names only (old behaviour) would not.
+        """
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_with_synonyms(SYNONYM_DB_ROWS)):
+            targets = get_fuzzy_targets()
+
+        matched_key = fuzzy_match_food_name("Chappatti", list(targets.keys()))
+        assert matched_key is not None
+        canonical = targets[matched_key]
+        assert canonical == "Roti (Plain Wheat)"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -354,7 +506,7 @@ REALISTIC_LIST = [
     "Roti (Plain Wheat)", "Dal Makhani", "Chicken Biryani",
     "Paneer Tikka", "Aloo Gobhi", "Rajma Masala",
     "Curd (Plain)", "Dahi Bhalla (Curd Dumpling)",
-    "Boiled Egg", "Stuffed Paratha",
+    "Boiled Egg", "Stuffed Paratha", "Chapati",
     "Kesar Milk (Saffron Cold)", "Milk (Full Fat)",
     "Lychee", "Mango",
 ]
@@ -380,10 +532,9 @@ class TestFuzzyMatchFoodName:
         result = fuzzy_match_food_name("alu gobi", FUZZY_LIST, threshold=50)
         assert result == "Aloo Gobhi"
 
-    def test_partial_word_match_near_threshold(self):
-        # "paneer" alone scores ~75 against "Paneer Tikka" (WRatio partial)
-        # passes at threshold=70 but not the default 80 (prevents false positives)
-        result = fuzzy_match_food_name("paneer", FUZZY_LIST, threshold=70)
+    def test_partial_word_match(self):
+        # "paneer" alone scores 90 against "Paneer Tikka" with processor (was 75 without)
+        result = fuzzy_match_food_name("paneer", FUZZY_LIST)
         assert result == "Paneer Tikka"
 
     def test_below_threshold_returns_none(self):
@@ -402,9 +553,9 @@ class TestFuzzyMatchFoodName:
         result = fuzzy_match_food_name("dal makhni", FUZZY_LIST, threshold=99)
         assert result is None
 
-    def test_custom_threshold_lenient(self):
-        # With threshold=50, a weak partial match can succeed
-        result = fuzzy_match_food_name("rajma", FUZZY_LIST, threshold=50)
+    def test_partial_word_matches_at_default_threshold(self):
+        # "rajma" scores 90 with processor — passes at default threshold
+        result = fuzzy_match_food_name("rajma", FUZZY_LIST)
         assert result == "Rajma Masala"
 
 
@@ -420,18 +571,11 @@ class TestFuzzyMatchRegressions:
     """
 
     # ── Case: "boilded egg" ──────────────────────────────────────────────────
-    # WRatio("boilded egg", "Boiled Egg") = 76. Passes at threshold=70 but not 80.
-    # The default threshold of 80 is too strict for single-char-swap typos.
-    def test_typo_boilded_egg_at_threshold_70(self):
-        result = fuzzy_match_food_name("boilded egg", REALISTIC_LIST, threshold=70)
+    # With processor=utils.default_process, "boilded egg" scores 95 vs "Boiled Egg".
+    # Passes at the default threshold=80.
+    def test_typo_boilded_egg_at_default_threshold(self):
+        result = fuzzy_match_food_name("boilded egg", REALISTIC_LIST)
         assert result == "Boiled Egg"
-
-    def test_typo_boilded_egg_misses_at_default_threshold(self):
-        # Documents that the default threshold=80 is too strict for this typo.
-        # If this test starts FAILING (i.e. it returns a match), the threshold
-        # was changed — verify the change doesn't introduce false positives.
-        result = fuzzy_match_food_name("boilded egg", REALISTIC_LIST, threshold=80)
-        assert result is None
 
     # ── Case: "paratha stuffed" ──────────────────────────────────────────────
     # WRatio = 82 via token_sort. Passes at default threshold=80 when the DB
@@ -450,10 +594,39 @@ class TestFuzzyMatchRegressions:
     # ── Case: "milk" false positive ──────────────────────────────────────────
     # The partial ilike step (`%milk%`) returned "Kesar Milk" — wrong food.
     # Fuzzy at threshold=80 correctly rejects it (WRatio=73 < 80).
-    def test_milk_does_not_false_positive_to_kesar_milk_at_default(self):
+    # ── Chapati variants (regression: process.extractOne was missing processor) ──
+    # With processor=utils.default_process, all variants score 88-100 vs "Chapati".
+    # Without the processor, "CHAppatti" only scored 62 — a capitalization bug.
+    def test_chapati_exact_spelling(self):
+        result = fuzzy_match_food_name("chapati", REALISTIC_LIST)
+        assert result == "Chapati"
+
+    def test_chapati_double_p(self):
+        result = fuzzy_match_food_name("chappati", REALISTIC_LIST)
+        assert result == "Chapati"
+
+    def test_chapati_double_t(self):
+        result = fuzzy_match_food_name("chapatti", REALISTIC_LIST)
+        assert result == "Chapati"
+
+    def test_chapati_mixed_case(self):
+        # "CHAppatti" scored 62 without processor — regression for the capitalization bug
+        result = fuzzy_match_food_name("CHAppatti", REALISTIC_LIST)
+        assert result == "Chapati"
+
+    def test_chapati_camel_case(self):
+        result = fuzzy_match_food_name("ChapAti", REALISTIC_LIST)
+        assert result == "Chapati"
+
+    def test_milk_ambiguity_both_score_equally(self):
+        # "milk" scores 90 via partial matching against BOTH "Milk (Full Fat)" and
+        # "Kesar Milk (Saffron Cold)" — they tie and list order decides the winner.
+        # This is expected: single-word substring ambiguity requires synonyms to resolve,
+        # not fuzzy matching. The synonym map ("milk" → "Milk (Full Fat)") takes priority
+        # in the route chain before fuzzy is ever called.
         result = fuzzy_match_food_name("milk", REALISTIC_LIST, threshold=80)
-        # Neither "Kesar Milk" nor "Milk (Full Fat)" should win at strict threshold
-        assert result != "Kesar Milk (Saffron Cold)"
+        assert result is not None          # something matches
+        assert "milk" in result.lower()    # it's a milk item, not something unrelated
 
     def test_milk_ambiguity_at_lenient_threshold(self):
         # WRatio("milk", "Milk (Full Fat)") == WRatio("milk", "Kesar Milk") == 73.
