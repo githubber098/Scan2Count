@@ -68,20 +68,16 @@ def get_fuzzy_targets() -> dict[str, str]:
 
 def lookup_food(name: str) -> Optional[dict]:
     """
-    Find a row in indian_food_items by exact / partial item_name match.
+    Find a row in indian_food_items by exact case-insensitive item_name match.
     Synonym matching is NOT done here — call get_synonym_map() before this
     and resolve to the canonical name first.
+    Partial substring matching is intentionally excluded to avoid false positives
+    (e.g. "chips" matching "Fish and Chips", "milk" matching "Kesar Milk").
     """
     supabase = get_supabase_admin()
     name = name.strip()
 
-    # 1. Exact case-insensitive match
     resp = supabase.table("indian_food_items").select(_SELECT).ilike("item_name", name).limit(1).execute()
-    if resp.data:
-        return resp.data[0]
-
-    # 2. Partial match (e.g. "roti" inside "Roti (Plain Wheat)")
-    resp = supabase.table("indian_food_items").select(_SELECT).ilike("item_name", f"%{name}%").limit(1).execute()
     if resp.data:
         return resp.data[0]
 

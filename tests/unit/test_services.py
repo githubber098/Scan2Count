@@ -186,14 +186,19 @@ ROTI_DB_ROW = {
 
 
 def _supabase_returning(rows: list[dict]) -> MagicMock:
-    """
-    Build a mock Supabase client where both ilike queries in lookup_food
-    return the same rows (exact ilike and partial ilike).
-    """
+    """Build a mock Supabase client for the single exact-ilike query in lookup_food."""
     mock = MagicMock()
     result = MagicMock(data=rows)
     mock.table.return_value.select.return_value.ilike.return_value.limit.return_value.execute.return_value = result
     return mock
+
+
+FISH_AND_CHIPS_ROW = {
+    "id": 99, "item_name": "Fish and Chips",
+    "quantity": 1.0, "unit": "serving",
+    "calories": 500.0, "protein": 20.0,
+    "fat": 25.0, "carbohydrates": 55.0, "fiber": 3.0,
+}
 
 
 @pytest.mark.unit
@@ -206,20 +211,27 @@ class TestLookupFood:
         assert result is not None
         assert result["item_name"] == "Roti (Plain Wheat)"
 
-    def test_partial_match_fallback(self):
-        """Exact ilike misses; partial ilike finds the row (two sequential calls)."""
-        mock_sb = MagicMock()
-        ilike_exec = MagicMock(side_effect=[
-            MagicMock(data=[]),            # exact miss
-            MagicMock(data=[ROTI_DB_ROW]), # partial hit
-        ])
-        mock_sb.table.return_value.select.return_value \
-            .ilike.return_value.limit.return_value.execute = ilike_exec
-
-        with patch("services.foods.get_supabase_admin", return_value=mock_sb):
+    def test_no_partial_ilike_fallback(self):
+        """
+        Partial substring matching is intentionally absent from lookup_food.
+        A partial name like 'roti wheat' that doesn't exactly match any item_name
+        must return None — the caller is responsible for fuzzy fallback.
+        This prevents false positives like 'chips'→'Fish and Chips'.
+        """
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_returning([])):
             result = lookup_food("roti wheat")
-        assert result is not None
-        assert result["item_name"] == "Roti (Plain Wheat)"
+        assert result is None
+
+    def test_chips_does_not_match_fish_and_chips(self):
+        """
+        Regression: 'chips' must not return 'Fish and Chips' via substring match.
+        The exact ilike('chips') will not match 'Fish and Chips', so None is returned.
+        """
+        with patch("services.foods.get_supabase_admin",
+                   return_value=_supabase_returning([])):
+            result = lookup_food("chips")
+        assert result is None
 
     def test_no_match_returns_none(self):
         with patch("services.foods.get_supabase_admin",
