@@ -2,10 +2,13 @@
 Unit tests for pure-logic services and Supabase-backed services (fully mocked).
 
 Covers:
-  - services.profile.calculate_targets  (pure function — no mocks needed)
-  - services.foods.macros_for_quantity  (pure function — no mocks needed)
-  - services.foods.lookup_food          (Supabase mocked)
-  - services.groq_match.match_food_name (Groq API mocked)
+  - services.profile.calculate_targets      (pure function — no mocks needed)
+  - services.foods.macros_for_quantity      (pure function — no mocks needed)
+  - services.foods.lookup_food              (Supabase mocked)
+  - services.groq_match.match_food_name     (Groq API mocked — service kept but not in main chain)
+  - services.fuzzy_match.fuzzy_match_food_name  (pure function — no mocks needed)
+  - routers.log._build_line_item            (pure function — no mocks needed)
+  - routers.profile.pct                     (pure function — no mocks needed)
 """
 from __future__ import annotations
 
@@ -16,6 +19,9 @@ from groq import APIError
 from services.profile import calculate_targets
 from services.foods import macros_for_quantity, lookup_food
 from services.groq_match import match_food_name
+from services.fuzzy_match import fuzzy_match_food_name
+from routers.log import _build_line_item
+from routers.profile import pct
 
 # ─────────────────────────────────────────────────────────────────────────────
 # calculate_targets — Mifflin-St Jeor formula
@@ -180,15 +186,14 @@ ROTI_DB_ROW = {
 
 def _supabase_returning(rows: list[dict]) -> MagicMock:
     """
-    Build a mock Supabase client where every query in lookup_food's chain
-    returns the same rows.  lookup_food calls get_supabase_admin() ONCE and
-    reuses that client for both queries, so we mock the execute() call with
-    side_effect when the two queries must return different results.
+    Build a mock Supabase client where ALL three query paths in lookup_food
+    return the same rows (ilike exact, contains synonym, ilike partial).
     """
     mock = MagicMock()
-    mock.table.return_value.select.return_value \
-        .ilike.return_value.limit.return_value \
-        .execute.return_value.data = rows
+    result = MagicMock(data=rows)
+    base = mock.table.return_value.select.return_value
+    base.ilike.return_value.limit.return_value.execute.return_value = result
+    base.contains.return_value.limit.return_value.execute.return_value = result
     return mock
 
 
@@ -202,25 +207,39 @@ class TestLookupFood:
         assert result is not None
         assert result["item_name"] == "Roti (Plain Wheat)"
 
-    def test_partial_match_fallback(self):
+    def test_synonym_match_fallback(self):
         """
-        lookup_food calls get_supabase_admin() ONCE and runs two .ilike() queries
-        on the same client.  We simulate the first returning [] and the second
-        returning a match by using side_effect on execute().
+        Exact ilike misses; synonym contains query finds the row.
+        ilike calls share one execute mock (side_effect: [] then never reached).
+        contains execute returns the match.
         """
         mock_sb = MagicMock()
-        execute_mock = MagicMock()
-        # First execute() call → no match; second → match
-        execute_mock.side_effect = [
-            MagicMock(data=[]),
-            MagicMock(data=[ROTI_DB_ROW]),
-        ]
-        mock_sb.table.return_value.select.return_value \
-            .ilike.return_value.limit.return_value \
-            .execute = execute_mock
+        base = mock_sb.table.return_value.select.return_value
+        # Exact ilike → miss; synonym contains → hit; partial ilike never called
+        base.ilike.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+        base.contains.return_value.limit.return_value.execute.return_value = MagicMock(data=[ROTI_DB_ROW])
 
         with patch("services.foods.get_supabase_admin", return_value=mock_sb):
             result = lookup_food("roti")
+        assert result is not None
+        assert result["item_name"] == "Roti (Plain Wheat)"
+
+    def test_partial_match_fallback(self):
+        """
+        Exact ilike and synonym both miss; partial ilike finds the row.
+        ilike is called twice (exact then partial) — use side_effect.
+        """
+        mock_sb = MagicMock()
+        base = mock_sb.table.return_value.select.return_value
+        ilike_exec = MagicMock(side_effect=[
+            MagicMock(data=[]),         # exact miss
+            MagicMock(data=[ROTI_DB_ROW]),  # partial hit
+        ])
+        base.ilike.return_value.limit.return_value.execute = ilike_exec
+        base.contains.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+
+        with patch("services.foods.get_supabase_admin", return_value=mock_sb):
+            result = lookup_food("roti wheat")
         assert result is not None
         assert result["item_name"] == "Roti (Plain Wheat)"
 
@@ -319,3 +338,159 @@ class TestMatchFoodName:
             match_food_name("dal", FOOD_LIST)
         call_kwargs = MockGroq.return_value.chat.completions.create.call_args[1]
         assert call_kwargs["model"] == "llama-3.3-70b-versatile"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# fuzzy_match_food_name — RapidFuzz algorithmic matching (pure, no mocks)
+# ─────────────────────────────────────────────────────────────────────────────
+
+FUZZY_LIST = [
+    "Roti (Plain Wheat)", "Dal Makhani", "Chicken Biryani",
+    "Paneer Tikka", "Aloo Gobhi", "Rajma Masala", "Curd (Plain)",
+]
+
+
+@pytest.mark.unit
+class TestFuzzyMatchFoodName:
+
+    def test_exact_match(self):
+        assert fuzzy_match_food_name("Dal Makhani", FUZZY_LIST) == "Dal Makhani"
+
+    def test_case_insensitive_match(self):
+        assert fuzzy_match_food_name("dal makhani", FUZZY_LIST) == "Dal Makhani"
+
+    def test_minor_spelling_error(self):
+        # "chiken biryani" is close enough to "Chicken Biryani"
+        result = fuzzy_match_food_name("chiken biryani", FUZZY_LIST)
+        assert result == "Chicken Biryani"
+
+    def test_transliteration_variant_lenient_threshold(self):
+        # "alu gobi" scores ~56 vs "Aloo Gobhi" — transliterations need a
+        # lenient threshold; at 50 it matches (Groq handles the strict path)
+        result = fuzzy_match_food_name("alu gobi", FUZZY_LIST, threshold=50)
+        assert result == "Aloo Gobhi"
+
+    def test_partial_word_match_near_threshold(self):
+        # "paneer" alone scores ~75 against "Paneer Tikka" (WRatio partial)
+        # passes at threshold=70 but not the default 80 (prevents false positives)
+        result = fuzzy_match_food_name("paneer", FUZZY_LIST, threshold=70)
+        assert result == "Paneer Tikka"
+
+    def test_below_threshold_returns_none(self):
+        # Completely unrelated string should not match anything
+        result = fuzzy_match_food_name("spaghetti carbonara", FUZZY_LIST)
+        assert result is None
+
+    def test_empty_food_list_returns_none(self):
+        assert fuzzy_match_food_name("roti", []) is None
+
+    def test_empty_description_returns_none(self):
+        assert fuzzy_match_food_name("", FUZZY_LIST) is None
+
+    def test_custom_threshold_strict(self):
+        # With threshold=99, even good matches should fail unless near-perfect
+        result = fuzzy_match_food_name("dal makhni", FUZZY_LIST, threshold=99)
+        assert result is None
+
+    def test_custom_threshold_lenient(self):
+        # With threshold=50, a weak partial match can succeed
+        result = fuzzy_match_food_name("rajma", FUZZY_LIST, threshold=50)
+        assert result == "Rajma Masala"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# _build_line_item — confirmed-item assembly (pure, no DB)
+# ─────────────────────────────────────────────────────────────────────────────
+
+ROTI_FOOD_ROW = {
+    "id": 1, "item_name": "Roti (Plain Wheat)",
+    "quantity": 1.0, "unit": "piece",
+    "calories": 84.0, "protein": 4.1,
+    "fat": 0.8, "carbohydrates": 15.2, "fiber": 2.4,
+}
+
+
+@pytest.mark.unit
+class TestBuildLineItem:
+
+    def test_matched_food_sets_matched_true(self):
+        item = _build_line_item("roti", ROTI_FOOD_ROW, 1.0, "piece")
+        assert item["matched"] is True
+
+    def test_unmatched_food_sets_matched_false(self):
+        item = _build_line_item("xyz", None, 1.0, "serving")
+        assert item["matched"] is False
+
+    def test_matched_uses_canonical_food_name(self):
+        item = _build_line_item("roti", ROTI_FOOD_ROW, 1.0, "piece")
+        assert item["food_name"] == "Roti (Plain Wheat)"
+
+    def test_unmatched_uses_ai_name_as_food_name(self):
+        item = _build_line_item("mystery dish", None, 1.0, "serving")
+        assert item["food_name"] == "mystery dish"
+
+    def test_matched_calories_scaled_correctly(self):
+        # 2 rotis = 2 × 84 = 168
+        item = _build_line_item("roti", ROTI_FOOD_ROW, 2.0, "piece")
+        assert item["calories"] == pytest.approx(168.0, abs=0.2)
+
+    def test_matched_half_serving_scales_down(self):
+        item = _build_line_item("roti", ROTI_FOOD_ROW, 0.5, "piece")
+        assert item["calories"] == pytest.approx(42.0, abs=0.2)
+        assert item["protein_g"] == pytest.approx(2.05, abs=0.1)
+
+    def test_matched_sets_base_quantity_from_food(self):
+        item = _build_line_item("roti", ROTI_FOOD_ROW, 2.0, "piece")
+        assert item["base_quantity"] == pytest.approx(1.0)
+
+    def test_matched_sets_per_base_values(self):
+        item = _build_line_item("roti", ROTI_FOOD_ROW, 1.0, "piece")
+        assert item["calories_per_base"] == pytest.approx(84.0)
+        assert item["protein_per_base"]  == pytest.approx(4.1)
+
+    def test_unmatched_all_macros_zero(self):
+        item = _build_line_item("xyz", None, 2.0, "serving")
+        assert item["calories"] == 0
+        assert item["protein_g"] == 0
+        assert item["fat_g"] == 0
+        assert item["carbs_g"] == 0
+        assert item["fiber_g"] == 0
+
+    def test_unmatched_base_quantity_equals_user_qty(self):
+        # factor must be 1 so that macros stay 0 after recalc on confirm
+        item = _build_line_item("xyz", None, 3.0, "serving")
+        assert item["base_quantity"] == item["quantity"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# pct — progress bar percentage helper (pure, no mocks)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.unit
+class TestPct:
+
+    def test_zero_consumed_returns_zero(self):
+        assert pct(0, 2000) == 0
+
+    def test_full_target_returns_100(self):
+        assert pct(2000, 2000) == 100
+
+    def test_half_target_returns_50(self):
+        assert pct(1000, 2000) == 50
+
+    def test_over_target_capped_at_100(self):
+        assert pct(3000, 2000) == 100
+
+    def test_zero_target_returns_zero_not_divzero(self):
+        assert pct(500, 0) == 0
+
+    def test_none_target_returns_zero(self):
+        assert pct(500, None) == 0
+
+    def test_rounds_to_nearest_int(self):
+        # 333/1000 = 33.3% → rounds to 33
+        assert pct(333, 1000) == 33
+
+    def test_fractional_consumed_works(self):
+        # round(50.5) = 50 in Python 3 (banker's rounding)
+        assert pct(50.5, 100) == 50

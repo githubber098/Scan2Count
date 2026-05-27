@@ -13,6 +13,12 @@ router = APIRouter()
 jinja_env = Environment(loader=FileSystemLoader("templates"))
 
 
+def pct(val: float, target) -> int:
+    """Return val/target as a percentage capped at 100, or 0 if target is falsy."""
+    t = float(target or 0)
+    return min(round(val / t * 100), 100) if t else 0
+
+
 def render(name: str, context: dict, status_code: int = 200) -> HTMLResponse:
     return HTMLResponse(jinja_env.get_template(name).render(**context), status_code=status_code)
 
@@ -125,11 +131,6 @@ async def home_page(request: Request, user=Depends(get_current_user)):
         totals["fat_g"]     += meal.get("total_fat_g",     0) or 0
         totals["fiber_g"]   += meal.get("total_fiber_g",   0) or 0
     totals = {k: round(v, 1) for k, v in totals.items()}
-
-    # Progress percentages (capped at 100 for bar width)
-    def pct(val: float, target) -> int:
-        t = float(target or 0)
-        return min(round(val / t * 100), 100) if t else 0
 
     cal_t  = profile.get("daily_calorie_target") or 2000
     prot_t = profile.get("daily_protein_g")      or 150

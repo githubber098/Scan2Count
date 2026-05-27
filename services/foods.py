@@ -17,19 +17,26 @@ def get_all_food_names() -> list[str]:
 def lookup_food(name: str) -> Optional[dict]:
     """
     Find the best match in indian_food_items for a food name.
-    Tries exact → partial match on item_name.
+    Tries: exact item_name → synonym array → partial item_name ilike.
     Returns the row dict or None.
     """
     supabase = get_supabase_admin()
     name = name.strip()
 
-    for query in [
-        lambda: supabase.table("indian_food_items").select(_SELECT).ilike("item_name", name).limit(1).execute(),
-        lambda: supabase.table("indian_food_items").select(_SELECT).ilike("item_name", f"%{name}%").limit(1).execute(),
-    ]:
-        resp = query()
-        if resp.data:
-            return resp.data[0]
+    # 1. Exact / case-insensitive match on item_name
+    resp = supabase.table("indian_food_items").select(_SELECT).ilike("item_name", name).limit(1).execute()
+    if resp.data:
+        return resp.data[0]
+
+    # 2. Synonym array contains the description (Postgres: 'name' = ANY(synonyms))
+    resp = supabase.table("indian_food_items").select(_SELECT).contains("synonyms", [name.lower()]).limit(1).execute()
+    if resp.data:
+        return resp.data[0]
+
+    # 3. Partial match on item_name
+    resp = supabase.table("indian_food_items").select(_SELECT).ilike("item_name", f"%{name}%").limit(1).execute()
+    if resp.data:
+        return resp.data[0]
 
     return None
 

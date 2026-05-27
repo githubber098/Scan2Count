@@ -162,9 +162,9 @@ class TestLogManualSubmit:
                                     data={"items_json": "not-valid-json"})
         assert response.status_code == 400
 
-    def test_groq_matches_food_and_shows_confirm_screen(self, auth_client):
+    def test_direct_lookup_shows_confirm_screen(self, auth_client):
+        """lookup_food finds the food by name/synonym on the first call."""
         with patch("routers.log.get_all_food_names", return_value=["Dal Makhani"]), \
-             patch("routers.log.match_food_name", return_value="Dal Makhani"), \
              patch("routers.log.lookup_food", return_value={
                  "id": 6, "item_name": "Dal Makhani",
                  "quantity": 1.0, "unit": "cup",
@@ -178,11 +178,12 @@ class TestLogManualSubmit:
         assert b"Dal Makhani" in response.content
         assert b"Confirm meal" in response.content
 
-    def test_groq_failure_falls_back_to_direct_lookup(self, auth_client):
-        """When Groq returns None, lookup_food is tried with the raw description."""
+    def test_fuzzy_fallback_finds_food(self, auth_client):
+        """When lookup_food misses, fuzzy_match_food_name returns a canonical name
+        and a second lookup_food call finds the food."""
         with patch("routers.log.get_all_food_names", return_value=["Roti (Plain Wheat)"]), \
-             patch("routers.log.match_food_name", return_value=None), \
-             patch("routers.log.lookup_food", return_value=FAKE_FOOD):
+             patch("routers.log.fuzzy_match_food_name", return_value="Roti (Plain Wheat)"), \
+             patch("routers.log.lookup_food", side_effect=[None, FAKE_FOOD]):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([{"name": "roti", "servings": 1}])
             })
@@ -190,13 +191,13 @@ class TestLogManualSubmit:
         assert b"Roti (Plain Wheat)" in response.content
 
     def test_no_match_found_shows_warning(self, auth_client):
+        """Both lookup paths return nothing — item shown as unmatched."""
         with patch("routers.log.get_all_food_names", return_value=[]), \
-             patch("routers.log.match_food_name", return_value=None), \
-             patch("routers.log.lookup_food", return_value=None):
+             patch("routers.log.lookup_food", return_value=None), \
+             patch("routers.log.fuzzy_match_food_name", return_value=None):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([{"name": "xyz unknown food", "servings": 1}])
             })
-        # All unmatched → shown on confirm with 0 macros (not a hard error)
         assert response.status_code == 200
         assert b"Not in database" in response.content
 
@@ -207,7 +208,6 @@ class TestLogManualSubmit:
                 "protein": 12, "fat": 8, "carbohydrates": 35, "fiber": 6}
 
         with patch("routers.log.get_all_food_names", return_value=["Roti (Plain Wheat)", "Dal Makhani"]), \
-             patch("routers.log.match_food_name", side_effect=["Roti (Plain Wheat)", "Dal Makhani"]), \
              patch("routers.log.lookup_food", side_effect=[roti, dal]):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([

@@ -8,7 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from dependencies import get_current_user
 from services.foods import get_all_food_names, lookup_food, macros_for_quantity
-from services.groq_match import match_food_name
+from services.fuzzy_match import fuzzy_match_food_name
 from services.profile import get_supabase_admin
 from services.vision import analyze_meal_photo
 
@@ -136,9 +136,13 @@ async def manual_submit(
         if not description:
             continue
 
-        # Ask Groq to map free-text → canonical DB name; fall back to direct lookup
-        canonical = match_food_name(description, food_names) or description
-        food      = lookup_food(canonical)
+        # lookup_food tries: exact → synonym → partial ilike
+        # If all fail, try fuzzy match on item_names then look up the winner
+        food = lookup_food(description)
+        if not food:
+            fuzzy_name = fuzzy_match_food_name(description, food_names)
+            if fuzzy_name:
+                food = lookup_food(fuzzy_name)
 
         if food:
             base_qty = float(food["quantity"] or 1)
