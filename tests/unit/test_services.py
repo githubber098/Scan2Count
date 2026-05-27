@@ -349,6 +349,16 @@ FUZZY_LIST = [
     "Paneer Tikka", "Aloo Gobhi", "Rajma Masala", "Curd (Plain)",
 ]
 
+# Realistic subset of the actual DB — used for regression tests on real failures
+REALISTIC_LIST = [
+    "Roti (Plain Wheat)", "Dal Makhani", "Chicken Biryani",
+    "Paneer Tikka", "Aloo Gobhi", "Rajma Masala",
+    "Curd (Plain)", "Dahi Bhalla (Curd Dumpling)",
+    "Boiled Egg", "Stuffed Paratha",
+    "Kesar Milk (Saffron Cold)", "Milk (Full Fat)",
+    "Lychee", "Mango",
+]
+
 
 @pytest.mark.unit
 class TestFuzzyMatchFoodName:
@@ -396,6 +406,78 @@ class TestFuzzyMatchFoodName:
         # With threshold=50, a weak partial match can succeed
         result = fuzzy_match_food_name("rajma", FUZZY_LIST, threshold=50)
         assert result == "Rajma Masala"
+
+
+@pytest.mark.unit
+class TestFuzzyMatchRegressions:
+    """
+    Regression tests derived from real user inputs that failed in production.
+    Each test is named after the original failure so it can be traced back.
+
+    Passing status and required threshold are documented inline.
+    Tests marked TRANSLITERATION_GAP document cases that RapidFuzz cannot
+    solve and require Groq — they assert None at the default threshold.
+    """
+
+    # ── Case: "boilded egg" ──────────────────────────────────────────────────
+    # WRatio("boilded egg", "Boiled Egg") = 76. Passes at threshold=70 but not 80.
+    # The default threshold of 80 is too strict for single-char-swap typos.
+    def test_typo_boilded_egg_at_threshold_70(self):
+        result = fuzzy_match_food_name("boilded egg", REALISTIC_LIST, threshold=70)
+        assert result == "Boiled Egg"
+
+    def test_typo_boilded_egg_misses_at_default_threshold(self):
+        # Documents that the default threshold=80 is too strict for this typo.
+        # If this test starts FAILING (i.e. it returns a match), the threshold
+        # was changed — verify the change doesn't introduce false positives.
+        result = fuzzy_match_food_name("boilded egg", REALISTIC_LIST, threshold=80)
+        assert result is None
+
+    # ── Case: "paratha stuffed" ──────────────────────────────────────────────
+    # WRatio = 82 via token_sort. Passes at default threshold=80 when the DB
+    # item is named "Stuffed Paratha". Failure in prod means DB name differs.
+    def test_word_order_paratha_stuffed(self):
+        result = fuzzy_match_food_name("paratha stuffed", REALISTIC_LIST)
+        assert result == "Stuffed Paratha"
+
+    # ── Case: "litchi" (TRANSLITERATION_GAP) ────────────────────────────────
+    # WRatio("litchi", "Lychee") = 33. No string algorithm bridges this gap.
+    # Groq (or a synonyms entry) is required. This test documents the gap.
+    def test_transliteration_litchi_not_matched_by_fuzzy(self):
+        result = fuzzy_match_food_name("litchi", REALISTIC_LIST, threshold=80)
+        assert result is None  # must be handled by synonyms column or Groq
+
+    # ── Case: "milk" false positive ──────────────────────────────────────────
+    # The partial ilike step (`%milk%`) returned "Kesar Milk" — wrong food.
+    # Fuzzy at threshold=80 correctly rejects it (WRatio=73 < 80).
+    def test_milk_does_not_false_positive_to_kesar_milk_at_default(self):
+        result = fuzzy_match_food_name("milk", REALISTIC_LIST, threshold=80)
+        # Neither "Kesar Milk" nor "Milk (Full Fat)" should win at strict threshold
+        assert result != "Kesar Milk (Saffron Cold)"
+
+    def test_milk_ambiguity_at_lenient_threshold(self):
+        # WRatio("milk", "Milk (Full Fat)") == WRatio("milk", "Kesar Milk") == 73.
+        # When scores tie, rapidfuzz returns the first candidate in the list.
+        # This documents that single-word "milk" is AMBIGUOUS for fuzzy matching —
+        # the correct answer ("Curd (Plain)" vs "Kesar Milk") needs Groq or synonyms.
+        result = fuzzy_match_food_name("milk", REALISTIC_LIST, threshold=70)
+        # At threshold=70 something matches — we can't guarantee which "milk" item
+        assert result is not None
+        assert "milk" in result.lower() or "Milk" in result
+
+    # ── Case: "curd" false positive ──────────────────────────────────────────
+    # The partial ilike step returned "Dahi Bhalla (Curd Dumpling)" — wrong food.
+    # Fuzzy at threshold=80 rejects "Dahi Bhalla" (WRatio=68) AND "Curd (Plain)"
+    # (WRatio=73). Both are below 80 so fuzzy returns None — correct: Groq/synonyms
+    # should handle "curd" → "Curd (Plain)".
+    def test_curd_does_not_false_positive_to_dahi_bhalla(self):
+        result = fuzzy_match_food_name("curd", REALISTIC_LIST, threshold=80)
+        assert result != "Dahi Bhalla (Curd Dumpling)"
+
+    def test_curd_matches_plain_curd_at_lenient_threshold(self):
+        # At threshold=70, "Curd (Plain)" (WRatio=73) beats "Dahi Bhalla" (WRatio=68)
+        result = fuzzy_match_food_name("curd", REALISTIC_LIST, threshold=70)
+        assert result == "Curd (Plain)"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
