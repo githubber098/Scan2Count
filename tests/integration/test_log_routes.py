@@ -149,6 +149,14 @@ class TestLogPhotoSubmit:
 
 # ── POST /log/manual ──────────────────────────────────────────────────────────
 
+DAL_FOOD = {
+    "id": 6, "item_name": "Dal Makhani",
+    "quantity": 1.0, "unit": "cup",
+    "calories": 270, "protein": 12,
+    "fat": 8, "carbohydrates": 35, "fiber": 6,
+}
+
+
 @pytest.mark.integration
 class TestLogManualSubmit:
 
@@ -162,15 +170,23 @@ class TestLogManualSubmit:
                                     data={"items_json": "not-valid-json"})
         assert response.status_code == 400
 
-    def test_synonym_resolves_to_canonical_name(self, auth_client):
-        """synonym_map hit → lookup_food called with canonical name → confirm screen."""
-        dal = {"id": 6, "item_name": "Dal Makhani",
-               "quantity": 1.0, "unit": "cup",
-               "calories": 270, "protein": 12,
-               "fat": 8, "carbohydrates": 35, "fiber": 6}
-        with patch("routers.log.get_synonym_map", return_value={"dal": "Dal Makhani"}), \
-             patch("routers.log.get_fuzzy_targets", return_value={"Dal Makhani": "Dal Makhani"}), \
-             patch("routers.log.lookup_food", return_value=dal):
+    def test_exact_name_matched_directly_no_haiku_call(self, auth_client):
+        """Exact ilike hit → Haiku is never called."""
+        with patch("routers.log.lookup_food", return_value=FAKE_FOOD), \
+             patch("routers.log.match_food_names") as mock_haiku:
+            response = auth_client.post("/log/manual", data={
+                "items_json": json.dumps([{"name": "Roti (Plain Wheat)", "servings": 1}])
+            })
+        mock_haiku.assert_not_called()
+        assert response.status_code == 200
+        assert b"Roti (Plain Wheat)" in response.content
+        assert b"Confirm meal" in response.content
+
+    def test_haiku_fallback_when_exact_miss(self, auth_client):
+        """Exact ilike misses → Haiku resolves → second lookup succeeds."""
+        with patch("routers.log.lookup_food", side_effect=[None, DAL_FOOD]), \
+             patch("routers.log.get_all_food_names", return_value=["Dal Makhani"]), \
+             patch("routers.log.match_food_names", return_value={"dal": "Dal Makhani"}):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([{"name": "dal", "servings": 1}])
             })
@@ -178,78 +194,98 @@ class TestLogManualSubmit:
         assert b"Dal Makhani" in response.content
         assert b"Confirm meal" in response.content
 
-    def test_direct_lookup_when_no_synonym(self, auth_client):
-        """No synonym entry → lookup_food called with raw description."""
-        with patch("routers.log.get_synonym_map", return_value={}), \
-             patch("routers.log.get_fuzzy_targets", return_value={"Roti (Plain Wheat)": "Roti (Plain Wheat)"}), \
-             patch("routers.log.lookup_food", return_value=FAKE_FOOD):
+    def test_haiku_resolves_regional_name(self, auth_client):
+        """Regional name (litchi → Lychee) resolved by Haiku."""
+        lychee = {**FAKE_FOOD, "id": 20, "item_name": "Lychee",
+                  "quantity": 1.0, "unit": "piece", "calories": 7}
+        with patch("routers.log.lookup_food", side_effect=[None, lychee]), \
+             patch("routers.log.get_all_food_names", return_value=["Lychee"]), \
+             patch("routers.log.match_food_names", return_value={"litchi": "Lychee"}):
             response = auth_client.post("/log/manual", data={
-                "items_json": json.dumps([{"name": "roti", "servings": 1}])
+                "items_json": json.dumps([{"name": "litchi", "servings": 5}])
             })
         assert response.status_code == 200
-        assert b"Roti (Plain Wheat)" in response.content
+        assert b"Lychee" in response.content
 
-    def test_fuzzy_fallback_when_synonym_and_lookup_both_miss(self, auth_client):
-        """synonym miss + lookup miss → fuzzy on targets finds canonical → lookup hits."""
-        with patch("routers.log.get_synonym_map", return_value={}), \
-             patch("routers.log.get_fuzzy_targets", return_value={"Roti (Plain Wheat)": "Roti (Plain Wheat)"}), \
-             patch("routers.log.fuzzy_match_food_name", return_value="Roti (Plain Wheat)"), \
-             patch("routers.log.lookup_food", side_effect=[None, FAKE_FOOD]):
+    def test_haiku_resolves_typo(self, auth_client):
+        """Typo (boilded egg → Boiled Egg) resolved by Haiku."""
+        boiled = {**FAKE_FOOD, "id": 10, "item_name": "Boiled Egg",
+                  "quantity": 1.0, "unit": "piece", "calories": 78}
+        with patch("routers.log.lookup_food", side_effect=[None, boiled]), \
+             patch("routers.log.get_all_food_names", return_value=["Boiled Egg"]), \
+             patch("routers.log.match_food_names",
+                   return_value={"boilded egg": "Boiled Egg"}):
             response = auth_client.post("/log/manual", data={
-                "items_json": json.dumps([{"name": "rotii", "servings": 1}])
+                "items_json": json.dumps([{"name": "boilded egg", "servings": 1}])
             })
         assert response.status_code == 200
-        assert b"Roti (Plain Wheat)" in response.content
-
-    def test_fuzzy_matches_synonym_resolves_to_canonical(self, auth_client):
-        """fuzzy key is a synonym → fuzzy_target_map resolves it to canonical item_name."""
-        fuzzy_targets = {
-            "Roti (Plain Wheat)": "Roti (Plain Wheat)",
-            "Chapati": "Roti (Plain Wheat)",
-            "Chappati": "Roti (Plain Wheat)",
-        }
-        with patch("routers.log.get_synonym_map", return_value={}), \
-             patch("routers.log.get_fuzzy_targets", return_value=fuzzy_targets), \
-             patch("routers.log.fuzzy_match_food_name", return_value="Chapati"), \
-             patch("routers.log.lookup_food", side_effect=[None, FAKE_FOOD]):
-            response = auth_client.post("/log/manual", data={
-                "items_json": json.dumps([{"name": "chappatti", "servings": 1}])
-            })
-        assert response.status_code == 200
-        assert b"Roti (Plain Wheat)" in response.content
+        assert b"Boiled Egg" in response.content
 
     def test_no_match_found_shows_warning(self, auth_client):
-        """All three paths miss — item shown as unmatched (not a hard error)."""
-        with patch("routers.log.get_synonym_map", return_value={}), \
-             patch("routers.log.get_fuzzy_targets", return_value={}), \
-             patch("routers.log.lookup_food", return_value=None), \
-             patch("routers.log.fuzzy_match_food_name", return_value=None):
+        """Exact miss + Haiku NO_MATCH → item shown as unmatched (not a hard error)."""
+        with patch("routers.log.lookup_food", return_value=None), \
+             patch("routers.log.get_all_food_names", return_value=[]), \
+             patch("routers.log.match_food_names",
+                   return_value={"xyz unknown food": None}):
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([{"name": "xyz unknown food", "servings": 1}])
             })
         assert response.status_code == 200
         assert b"Not in database" in response.content
 
-    def test_multiple_items_all_appear_on_confirm(self, auth_client):
-        roti = FAKE_FOOD
-        dal  = {**FAKE_FOOD, "id": 6, "item_name": "Dal Makhani",
-                "quantity": 1.0, "unit": "cup", "calories": 270,
-                "protein": 12, "fat": 8, "carbohydrates": 35, "fiber": 6}
+    def test_chips_shows_not_in_database(self, auth_client):
+        """'chips' should not match 'Fish and Chips' — Haiku returns NO_MATCH."""
+        with patch("routers.log.lookup_food", return_value=None), \
+             patch("routers.log.get_all_food_names",
+                   return_value=["Fish and Chips"]), \
+             patch("routers.log.match_food_names",
+                   return_value={"chips": None}):
+            response = auth_client.post("/log/manual", data={
+                "items_json": json.dumps([{"name": "chips", "servings": 1}])
+            })
+        assert response.status_code == 200
+        assert b"Not in database" in response.content
 
-        with patch("routers.log.get_synonym_map", return_value={}), \
-             patch("routers.log.get_fuzzy_targets", return_value={
-                 "Roti (Plain Wheat)": "Roti (Plain Wheat)",
-                 "Dal Makhani": "Dal Makhani",
-             }), \
-             patch("routers.log.lookup_food", side_effect=[roti, dal]):
+    def test_multiple_items_batched_to_haiku_in_one_call(self, auth_client):
+        """Two unmatched items → exactly one Haiku call with both descriptions."""
+        roti = FAKE_FOOD
+        dal  = DAL_FOOD
+        with patch("routers.log.lookup_food", side_effect=[None, None, roti, dal]), \
+             patch("routers.log.get_all_food_names",
+                   return_value=["Roti (Plain Wheat)", "Dal Makhani"]), \
+             patch("routers.log.match_food_names",
+                   return_value={"roti": "Roti (Plain Wheat)",
+                                 "dal":  "Dal Makhani"}) as mock_haiku:
             response = auth_client.post("/log/manual", data={
                 "items_json": json.dumps([
-                    {"name": "roti",        "servings": 2},
-                    {"name": "dal makhani", "servings": 1},
+                    {"name": "roti", "servings": 2},
+                    {"name": "dal",  "servings": 1},
                 ])
             })
+        mock_haiku.assert_called_once()
         assert b"Roti (Plain Wheat)" in response.content
-        assert b"Dal Makhani" in response.content
+        assert b"Dal Makhani"        in response.content
+
+    def test_mixed_exact_and_haiku_match(self, auth_client):
+        """First item exact-matches; second needs Haiku."""
+        boiled = {**FAKE_FOOD, "id": 10, "item_name": "Boiled Egg",
+                  "quantity": 1.0, "unit": "piece", "calories": 78}
+        with patch("routers.log.lookup_food",
+                   side_effect=[FAKE_FOOD, None, boiled]), \
+             patch("routers.log.get_all_food_names", return_value=["Boiled Egg"]), \
+             patch("routers.log.match_food_names",
+                   return_value={"boilded egg": "Boiled Egg"}) as mock_haiku:
+            response = auth_client.post("/log/manual", data={
+                "items_json": json.dumps([
+                    {"name": "Roti (Plain Wheat)", "servings": 1},
+                    {"name": "boilded egg",        "servings": 1},
+                ])
+            })
+        # Haiku called once (only for the unmatched item)
+        args = mock_haiku.call_args[0]
+        assert args[0] == ["boilded egg"]   # only the unmatched desc sent
+        assert b"Roti (Plain Wheat)" in response.content
+        assert b"Boiled Egg"         in response.content
 
 
 # ── POST /log/save ────────────────────────────────────────────────────────────

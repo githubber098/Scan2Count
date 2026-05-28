@@ -7,8 +7,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 
 from dependencies import get_current_user
-from services.foods import get_all_food_names, get_fuzzy_targets, get_synonym_map, lookup_food, macros_for_quantity
-from services.fuzzy_match import fuzzy_match_food_name
+from services.claude_match import match_food_names
+from services.foods import get_all_food_names, lookup_food, macros_for_quantity
 from services.profile import get_supabase_admin
 from services.vision import analyze_meal_photo
 
@@ -120,45 +120,53 @@ async def manual_submit(
     ctx = {"request": request, "user": user.email}
 
     try:
-        raw_items = json.loads(items_json)  # [{name, servings}]
+        raw_items = json.loads(items_json)
     except (json.JSONDecodeError, ValueError):
         return render("log.html", {**ctx, "error": "Invalid input. Please try again."}, 400)
 
     if not raw_items:
         return render("log.html", {**ctx, "error": "No items entered."}, 400)
 
-    synonym_map       = get_synonym_map()    # {lowercase_synonym: canonical_item_name}
-    fuzzy_target_map  = get_fuzzy_targets()  # {item_name_or_synonym: canonical_item_name}
+    item_descs = [str(item.get("name", "")).strip() for item in raw_items]
 
+    # Step 1 — exact case-insensitive lookup (free, instant).
+    # Deduplicate so each unique description is looked up only once.
+    unique_descs = list(dict.fromkeys(d for d in item_descs if d))
+    food_cache: dict[str, dict | None] = {}
+    unmatched: list[str] = []
+
+    for desc in unique_descs:
+        food = lookup_food(desc)
+        if food:
+            food_cache[desc] = food
+        else:
+            unmatched.append(desc)
+            food_cache[desc] = None  # placeholder
+
+    # Step 2 — Claude Haiku batch call for everything that didn't exact-match.
+    # Handles misspellings, regional names, word-order variants, abbreviations.
+    if unmatched:
+        all_food_names = get_all_food_names()
+        haiku_results  = match_food_names(unmatched, all_food_names)
+        for desc, canonical in haiku_results.items():
+            if canonical:
+                food_cache[desc] = lookup_food(canonical)
+
+    # Assemble line items
     line_items = []
-    for item in raw_items:
-        description = str(item.get("name", "")).strip()
-        servings    = float(item.get("servings") or 1)
-        if not description:
+    for item, desc in zip(raw_items, item_descs):
+        if not desc:
             continue
-
-        # 1. Exact synonym match (case-insensitive Python dict lookup)
-        canonical = synonym_map.get(description.lower())
-        food = lookup_food(canonical) if canonical else None
-
-        # 2. Exact / partial ilike on item_name
-        if not food:
-            food = lookup_food(description)
-
-        # 3. Fuzzy against item_names AND synonyms — catches misspellings of synonyms
-        if not food:
-            fuzzy_key = fuzzy_match_food_name(description, list(fuzzy_target_map.keys()))
-            if fuzzy_key:
-                canonical = fuzzy_target_map.get(fuzzy_key, fuzzy_key)
-                food = lookup_food(canonical)
+        servings = float(item.get("servings") or 1)
+        food     = food_cache.get(desc)
 
         if food:
             base_qty = float(food["quantity"] or 1)
-            user_qty = servings * base_qty   # e.g. 2 servings × 1 piece = 2 pieces
+            user_qty = servings * base_qty
         else:
-            user_qty = servings              # unmatched: store as-is
+            user_qty = servings
 
-        line_items.append(_build_line_item(description, food, user_qty, "serving"))
+        line_items.append(_build_line_item(desc, food, user_qty, "serving"))
 
     if not line_items:
         return render("log.html", {**ctx, "error": "None of those items were recognised. Check the spelling."}, 400)

@@ -26,7 +26,6 @@ os.environ.setdefault("SUPABASE_URL",              "https://sandbox.supabase.co"
 os.environ.setdefault("SUPABASE_ANON_KEY",         "sandbox-anon-key")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "sandbox-service-role-key")
 os.environ.setdefault("ANTHROPIC_API_KEY",         "test-anthropic-key")
-os.environ.setdefault("GROQ_API_KEY",              "test-groq-key")
 os.environ.setdefault("ENVIRONMENT",               "test")
 
 # ── 2. Import app after env is ready ─────────────────────────────────────────
